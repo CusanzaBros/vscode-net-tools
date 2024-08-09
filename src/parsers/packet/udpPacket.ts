@@ -1,5 +1,6 @@
 import { GenericPacket } from "./genericPacket";
 import { DNSPacket } from "./dnsPacket";
+import { DHCPPacket } from "./dhcpPacket";
 
 export class UDPPacket extends GenericPacket {
 	packet: DataView;
@@ -14,6 +15,14 @@ export class UDPPacket extends GenericPacket {
 			);
 			return;
 		}
+
+		if(this.destPort == 67 || this.srcPort == 67 || this.destPort == 68 || this.srcPort == 68) {
+			this.innerPacket = new DHCPPacket(
+				new DataView(packet.buffer, packet.byteOffset + 8, packet.byteLength - 8),
+			);
+			return;
+		}
+
 		this.innerPacket = new GenericPacket(
 			new DataView(packet.buffer, packet.byteOffset + 8, packet.byteLength - 8),
 		);

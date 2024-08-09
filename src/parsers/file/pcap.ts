@@ -141,8 +141,10 @@ export class PCAPNGSection extends Section {
 				}
 				return new PCAPNGInterfaceDescriptionBlock(bytes, offset, header);
 			case 0x00000005:
-				console.log("type 5");
-				throw "type 5"
+				if(header == undefined) {
+					throw "header required";
+				}
+				//return new PCAPNGInterfaceStatisticsBlock(bytes, offset, header);
 			case 0x00000006:
 				if(header == undefined) {
 					throw "header required";
@@ -352,6 +354,103 @@ export class PCAPNGEnhancedPacketBlock extends Section {
 			}
 		}
 		return `Enhanced Packet Block: ${this.data.toString}</br>${this.options != undefined && this.options.length ? ", options: " + optionsText : ""}`;
+	}
+}
+
+class PCAPNGInterfaceStatisticsBlock extends Section {
+	dv: DataView;
+	le: boolean;
+
+	constructor(bytes: Uint8Array, offset: number, header: PCAPNGSectionHeaderBlock) {
+		super();
+		this.startoffset = offset;
+		this.dv = new DataView(bytes.buffer, offset, bytes.byteLength - offset);
+		this.le = header.le;
+		this.endoffset = offset + this.blockLength;
+	}
+
+	get blockType() {
+		return this.dv.getUint32(0, this.le);
+	}
+
+	get blockLength() {
+		return this.dv.getUint32(4, this.le);
+	}
+
+	get interfaceID() {
+		return this.dv.getUint32(8, this.le);
+	}
+
+	get tsHigh() {
+		return this.dv.getUint32(12, this.le);
+	}
+
+	get tsLow() {
+		return this.dv.getUint32(16, this.le);
+	}
+
+
+	get options() {
+		const options: PCAPNGOption[] = [];
+		if(this.blockLength <= 24) {
+			return options;
+		}
+		let i = this.dv.byteOffset + 20;
+		try{
+		do {
+			const option = new PCAPNGOption(this.dv.buffer, i, this.le);
+			if(option.code != 0) {
+				options.push(option);
+			} else {
+				break;
+			}
+			i+= option.length+4;
+			if(option.length % 4) {
+				i += 4 - option.length % 4;
+			}
+		} while(true);
+		}catch(e) {
+			throw "sada";
+		}
+		return options;
+	}
+	
+	get toString() {
+		let optionsText = "";
+		const decoder = new TextDecoder('utf-8');
+		if(this.options != undefined) {
+			for(let i = 0; i < this.options?.length; i++) {
+				switch(this.options[i].code) {
+					case 1:
+						optionsText += `opt_comment ${decoder.decode(this.options[i].value)}`;
+						break;
+					case 2:
+						optionsText += `isb_starttime ${this.options[i].value.getBigUint64(0, this.le)}`;
+						break;
+					case 3:
+						optionsText += `isb_endtime ${this.options[i].value.getBigUint64(0, this.le)}`;
+						break;
+					case 4:
+						optionsText += `isb_ifrecv ${this.options[i].value.getBigUint64(0, this.le)}`;
+						break;
+					case 5:
+						optionsText += `isb_ifdrop ${this.options[i].value.getBigUint64(0, this.le)}`;
+						break;
+					case 6:
+						optionsText += `isb_filteraccept ${this.options[i].value.getBigUint64(0, this.le)}`;
+						break;
+					case 7:
+						optionsText += `isb_osdrop ${this.options[i].value.getBigUint64(0, this.le)}`;
+						break;
+					case 8:
+						optionsText += `isb_usrdeliv ${this.options[i].value.getBigUint64(0, this.le)}`;
+						break;
+					default:
+						optionsText += `opt_unknown ${this.options[i].code}`;
+				}
+			}
+		}
+		return `Interface Statistics Packet Block: </br>interface ID:${this.interfaceID}</br>${this.options != undefined && this.options.length ? ", options: " + optionsText : ""}`;
 	}
 }
 

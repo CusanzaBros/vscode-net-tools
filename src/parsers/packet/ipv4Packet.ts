@@ -3,7 +3,7 @@ import { ICMPPacket } from "./icmpPacket";
 import { TCPPacket } from "./tcpPacket";
 import { UDPPacket } from "./udpPacket";
 
-export class IPPacket extends GenericPacket {
+export class IPv4Packet extends GenericPacket {
 	packet: DataView;
 	innerPacket: GenericPacket;
 

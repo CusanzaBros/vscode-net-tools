@@ -1,14 +1,14 @@
 import { GenericPacket } from "./genericPacket";
-import { IPPacket } from "./ipPacket";
+import { IPv4Packet } from "./ipv4Packet";
 
 export class ICMPPacket extends GenericPacket {
 	packet: DataView;
-    innerPacket: IPPacket;
+    innerPacket: IPv4Packet;
 
 	constructor(packet: DataView) {
 		super(packet);
 		this.packet = packet;
-		this.innerPacket = new IPPacket(
+		this.innerPacket = new IPv4Packet(
 					new DataView(packet.buffer, packet.byteOffset + 8, packet.byteLength - 8),
 				);
 	}

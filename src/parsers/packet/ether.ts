@@ -1,6 +1,7 @@
 import { ARPPacket } from "./arpPacket";
 import { GenericPacket } from "./genericPacket";
-import { IPPacket } from "./ipPacket";
+import { IPv4Packet } from "./ipv4Packet";
+import { IPv6Packet } from "./ipv6Packet";
 
 export class EthernetPacket {
 	packet: DataView;
@@ -10,12 +11,28 @@ export class EthernetPacket {
 		this.packet = packet;
 		switch (this.proto) {
 			case 0x800:
-				this.innerPacket = new IPPacket(
+				if(this.packet.getUint8(14) >> 4 == 4) {
+					this.innerPacket = new IPv4Packet(
+						new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
+					);
+				} else if(this.packet.getUint8(0) >> 4 == 6) {
+					this.innerPacket = new IPv6Packet(
+						new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
+					);
+				} else {
+					this.innerPacket = new GenericPacket(
+						new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
+					);
+				}
+				break;
+
+			case 0x806:
+				this.innerPacket = new ARPPacket(
 					new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
 				);
 				break;
-			case 0x806:
-				this.innerPacket = new ARPPacket(
+			case 0x86dd:
+				this.innerPacket = new IPv6Packet(
 					new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
 				);
 				break;
