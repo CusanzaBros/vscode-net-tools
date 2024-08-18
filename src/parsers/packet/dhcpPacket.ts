@@ -211,7 +211,7 @@ class DHCPOptionServerIdentifier extends DHCPOption {
 			if(i == 3) {
 				break;
 			}
-			ret += "."
+			ret += ".";
 		}
 		return ret;
 

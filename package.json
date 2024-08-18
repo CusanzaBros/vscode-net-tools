@@ -12,6 +12,24 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "packetDetails",
+          "title": "Packet Details",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "packetDetails": [
+        {
+          "id": "packetDetails.detailsView",
+          "name": "Packet Details",
+          "type": "webview"
+        }
+      ]
+    },
     "customEditors": [
 			{
 				"viewType": "packetreader.pcap",
@@ -24,11 +42,27 @@
 			}
 		],
     "commands": [
-      {
-        "command": "packetreader.helloWorld",
-        "title": "Hello World"
-      }
-    ]
+			{
+				"command": "packetDetails.addColor",
+				"category": "Calico Colors",
+				"title": "Add Color"
+			},
+			{
+				"command": "packetDetails.clearColors",
+				"category": "Calico Colors",
+				"title": "Clear Colors",
+				"icon": "$(clear-all)"
+			}
+		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "packetDetails.clearColors",
+					"group": "navigation",
+					"when": "view == packetDetails.detailsView"
+				}
+			]
+		}
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

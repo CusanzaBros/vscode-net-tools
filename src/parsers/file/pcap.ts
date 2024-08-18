@@ -144,7 +144,7 @@ export class PCAPNGSection extends Section {
 				if(header == undefined) {
 					throw "header required";
 				}
-				//return new PCAPNGInterfaceStatisticsBlock(bytes, offset, header);
+				return new PCAPNGInterfaceStatisticsBlock(bytes, offset, header);
 			case 0x00000006:
 				if(header == undefined) {
 					throw "header required";
@@ -265,11 +265,17 @@ export class PCAPNGEnhancedPacketBlock extends Section {
 	constructor(bytes: Uint8Array, offset: number, header: PCAPNGSectionHeaderBlock) {
 		super();
 		this.startoffset = offset;
+	
 		this.dv = new DataView(bytes.buffer, offset, bytes.byteLength - offset);
+		
 		this.le = header.le;
 		this.endoffset = offset + this.blockLength;
+try{
 		this.data = new EthernetPacket(new DataView(bytes.buffer, offset + 28, this.capturedLength));
-		
+}catch(e){
+	
+	throw '';
+}
 		
 	}
 
@@ -408,7 +414,7 @@ class PCAPNGInterfaceStatisticsBlock extends Section {
 			if(option.length % 4) {
 				i += 4 - option.length % 4;
 			}
-		} while(true);
+		} while(i < this.dv.byteLength-4);
 		}catch(e) {
 			throw "sada";
 		}
