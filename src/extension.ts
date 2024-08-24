@@ -7,10 +7,11 @@ import { PacketViewProvider } from './packetdetails';
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	
-	context.subscriptions.push(pcapViewerProvider.register(context));
-	
 	const provider = new PacketViewProvider(context.extensionUri);
+
+	context.subscriptions.push(pcapViewerProvider.register(context, provider));
+	
+	
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(PacketViewProvider.viewType, provider));

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { Section } from './parsers/file/pcap';
 
 
 export class PacketViewProvider implements vscode.WebviewViewProvider {
@@ -10,6 +11,14 @@ export class PacketViewProvider implements vscode.WebviewViewProvider {
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
 	) { }
+
+	public refresh(section: Section) {
+		if(this._view == undefined) {
+			return;
+		}
+		this._view.webview.html = this._getHtmlForWebview(this._view.webview, section);
+		
+	}
 
 	public resolveWebviewView(
 		webviewView: vscode.WebviewView,
@@ -53,9 +62,57 @@ export class PacketViewProvider implements vscode.WebviewViewProvider {
 		}
 	}
 
-	private _getHtmlForWebview(webview: vscode.Webview) {
+	private printArray(pa:Array<any>, depth:number): string { 
+		let ret = "";
+		let bFirst = true;
+		if(depth == 0) {
+			ret += (`<ul class="tree">`);
+		} else {
+			ret += ("<ul>");
+		}
+		
+		ret += ("<li>");
+		if(pa[0][0] == "*") {
+			ret += ("<details open>");
+		} else {
+			ret += ("<details>");
+		}
+
+		pa.forEach((a) => {
+	
+			if (Array.isArray(a)) {
+				ret += this.printArray(a, depth+1); 
+			} else {  
+				if (bFirst) { 
+					bFirst = false;
+					if(a[0] == "*") {
+						ret += (`<summary>${a.toString().slice(1)}</summary>`);
+					} else {
+						ret += (`<summary>${a.toString()}</summary>`);
+					}
+					
+					ret += ("<ul>");
+				} else { 
+					ret += (`<li>${a.toString()}</li>`);
+				} 
+			} 
+		}) 
+	
+		ret += ("</ul>");
+		ret += ("</details>");
+		ret += ("</li>");
+		ret += ("</ul>");
+
+		return ret;
+	} 
+		
+	// const arr:Array<any> = ["a", "b", "b2", ["c", ["e", "f"], "d"]]; 
+	
+	// printArray(arr, 0); 
+
+	private _getHtmlForWebview(webview: vscode.Webview, section?: Section) {
 		// Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
-		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
+		
 
 		// Do the same for the stylesheet.
 		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css'));
@@ -64,6 +121,16 @@ export class PacketViewProvider implements vscode.WebviewViewProvider {
 
 		// Use a nonce to only allow a specific script to be run.
 		const nonce = getNonce();
+
+		let strProperties = "";
+		let strHex = "";
+		let strASCII = "";
+		if(section != undefined) {
+			strProperties = this.printArray(section.getProperties, 0);
+
+			strHex = section.getHex;
+			strASCII = section.getASCII;
+		}
 
 		return `<!DOCTYPE html>
 			<html lang="en">
@@ -86,12 +153,11 @@ export class PacketViewProvider implements vscode.WebviewViewProvider {
 				<title>Cat Colors</title>
 			</head>
 			<body>
-				<ul class="color-list">
-				</ul>
-
-				<button class="add-color-button">Add Color</button>
-
-				<script nonce="${nonce}" src="${scriptUri}"></script>
+				<div class="packet-details">
+					<span class="packet-properties"> ${strProperties} </span>
+					<span class="packet-hex"> ${strHex} </span>
+					<span class="packet-ascii"> ${strASCII} </span>
+				</div>
 			</body>
 			</html>`;
 	}

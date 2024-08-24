@@ -28,6 +28,10 @@ export class IPv6Packet extends GenericPacket {
 		return this.packet.getUint8(6);
 	}
 
+	get hopLimit() {
+		return this.packet.getUint8(7);
+	}
+
 	
 
 	
@@ -84,6 +88,37 @@ export class IPv6Packet extends GenericPacket {
 		return `IPv${this.version}, ${this.srcAddress.correctForm()} > ${this.destAddress.correctForm()}, (0x${this.nextHeader.toString(16)}), ${this.innerPacket.toString} `;
 	}
 
+	get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Protocol Version 6");
+		arr.push(`Version: ${this.version}`);
+		arr.push(`Payload Length: ${this.payloadLength}`);
+		switch (this.nextHeader) {
+			case 0x0:
+				arr.push(`Next Header: Hop-by-Hop Options Header (${this.nextHeader})`);
+				break;
+			case 0x01:
+				arr.push(`Next Header: ICMP (${this.nextHeader})`);
+				break;
+			case 0x06:
+				arr.push(`Next Header: TCP (${this.nextHeader})`);
+				break;
+			case 0x11:
+				arr.push(`Next Header: UDP (${this.nextHeader})`);
+				break;
+			case 0x3a:
+				arr.push(`Next Header: ICMPv6 (${this.nextHeader})`);
+				break;
+			default:
+				arr.push(`Next Header: Unknown (${this.nextHeader})`);
+		}
+		arr.push(`Hop Limit: (${this.hopLimit})`);
+		arr.push(`Source Address: (${this.srcAddress.correctForm()})`);
+		arr.push(`Destination Address: (${this.destAddress.correctForm()})`);
+
+		arr.push(this.innerPacket.getProperties);
+		return arr;
+	}
 	
 }
 

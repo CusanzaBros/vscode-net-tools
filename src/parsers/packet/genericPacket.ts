@@ -12,4 +12,8 @@ export class GenericPacket {
 		}
 		return ret.trimEnd();
 	}
+
+	get getProperties(): Array<any> {
+		return [];
+	}
 }

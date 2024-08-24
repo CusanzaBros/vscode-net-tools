@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { Disposable, disposeAll } from './dispose';
 import { Section, HeaderSection } from "./parsers/file/pcap";
+import { PacketViewProvider } from './packetdetails';
+
 
 /**
  * Define the type of edits used in paw draw files.
@@ -42,6 +44,7 @@ class pcapViewerDocument extends Disposable implements vscode.CustomDocument {
 	private _documentData: Uint8Array;
 	private _edits: Array<pcapViewerEdit> = [];
 	private _savedEdits: Array<pcapViewerEdit> = [];
+	private _sections: Array<Section> = [];
 
 	private readonly _delegate: pcapViewerDocumentDelegate;
 
@@ -54,8 +57,30 @@ class pcapViewerDocument extends Disposable implements vscode.CustomDocument {
 		this._uri = uri;
 		this._documentData = initialContent;
 		this._delegate = delegate;
+
+		const bytes = this._documentData;
+		const header = Section.create(bytes);
+		let offset = header.endoffset;
+
+		let packet = header;
+		this._sections.push(packet);
+
+		while(offset < bytes.byteLength) {
+			
+			try {
+				packet = Section.createNext(bytes, packet, header as HeaderSection);
+				this._sections.push(packet);
+			} catch(e) {
+				console.log("exception stack:");
+				break;
+			}
+			offset = packet.endoffset;
+		}
 	}
 
+	public get sections(): Array<Section> {
+		return this._sections;
+	}
 	public get uri() { return this._uri; }
 
 	public get documentData(): Uint8Array { return this._documentData; }
@@ -194,8 +219,7 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 
 	private static newpcapViewerFileId = 1;
 
-	public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		console.log("register");
+	public static register(context: vscode.ExtensionContext, details: PacketViewProvider): vscode.Disposable {
 		vscode.commands.registerCommand("packetreader.pcap.new", () => {
 			const workspaceFolders = vscode.workspace.workspaceFolders;
 			if (!workspaceFolders) {
@@ -211,7 +235,7 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 
 		return vscode.window.registerCustomEditorProvider(
 			pcapViewerProvider.viewType,
-			new pcapViewerProvider(context),
+			new pcapViewerProvider(context, details),
 			{
 				// For this demo extension, we enable `retainContextWhenHidden` which keeps the
 				// webview alive even when it is not visible. You should avoid using this setting
@@ -232,7 +256,8 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 	private readonly webviews = new WebviewCollection();
 
 	constructor(
-		private readonly _context: vscode.ExtensionContext
+		private readonly _context: vscode.ExtensionContext,
+		private readonly _details: PacketViewProvider
 	) { }
 
 	//#region CustomEditorProvider
@@ -294,26 +319,17 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 		
 		webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview, document);
 
-		webviewPanel.webview.onDidReceiveMessage(e => this.onMessage(document, e));
-
-		// Wait for the webview to be properly ready before we init
-		webviewPanel.webview.onDidReceiveMessage(e => {
-			if (e.type === 'ready') {
-				if (document.uri.scheme === 'untitled') {
-					this.postMessage(webviewPanel, 'init', {
-						untitled: true,
-						editable: true,
-					});
-				} else {
-					const editable = vscode.workspace.fs.isWritableFileSystem(document.uri.scheme);
-
-					this.postMessage(webviewPanel, 'init', {
-						value: document.documentData,
-						editable,
-					});
-				}
+		webviewPanel.webview.onDidReceiveMessage(data => {
+			switch (data.type) {
+				case 'packetSelected':
+					{
+						this._details.refresh(document.sections[data.value]);
+						break;
+					}
 			}
+		
 		});
+		
 	}
 
 	private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<vscode.CustomDocumentEditEvent<pcapViewerDocument>>();
@@ -342,37 +358,26 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 	 */
 	private getHtmlForWebview(webview: vscode.Webview, document: pcapViewerDocument): string {
 		// Local path to script and css for the webview
+		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'main.js'));
 		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(
 			this._context.extensionUri, 'src', 'vscode.css'));
-			
-		// Use a nonce to whitelist which scripts can be run
-		const bytes = document.documentData;
-		const header = Section.create(bytes);
-		let offset = header.endoffset;
 
 		let lineOutput: string = "";
 		let lineNumberOutput: string = "";
 		let lines: number = 0;
 
-		let packet = header;
-		lineNumberOutput += "<span></span>";
-		lines++;
-		lineOutput += `<span>${header.toString}</span>`;
-		while(offset < bytes.byteLength) {
-			
-			try {
-				packet = Section.createNext(bytes, packet, header as HeaderSection);
-				lineNumberOutput += "<span></span>";
-				lines++;
-			} catch(e) {
-				console.log("exception stack:");
-				break;
-			}
-			offset = packet.endoffset;
-			lineOutput += `<span>${packet.toString}</span>`;
-		}
+		document.sections.forEach((section) => {
+			lineNumberOutput += "<span></span>";
+			lineOutput += `<span class="packet" id="${lines}">${section.toString}</span>`;
+			lines++;
 
 
+
+
+
+
+		});
+		const nonce = getNonce();
 		return /* html */`
 			<!DOCTYPE html>
 			<html lang="en">
@@ -383,7 +388,7 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 				Use a content security policy to only allow loading images from https or from our extension directory,
 				and only allow scripts that have a specific nonce.
 				-->
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} blob:; style-src ${webview.cspSource};">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} blob:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
 
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -395,17 +400,20 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 			</head>
 			<body>
 				<div class="editor">
-					<div class="line-numbers" style="width:${lines.toString().length-1}em;">
+					<div class="line-numbers" style="width:${document.sections.length.toString().length-1}em;">
 						${lineNumberOutput}
 					</div>
 					<div class="text-output">
 						${lineOutput}
 					</div>
 				</div>
+				<script nonce="${nonce}" src="${scriptUri}"></script>
 			</body>
 			</html>`;
 	}
 
+	
+	
 	private _requestId = 1;
 	private readonly _callbacks = new Map<number, (response: any) => void>();
 
@@ -434,6 +442,15 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 				}
 		}
 	}
+}
+
+function getNonce() {
+	let text = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	for (let i = 0; i < 32; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
 }
 
 /**

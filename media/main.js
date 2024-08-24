@@ -10,10 +10,10 @@
     /** @type {Array<{ value: string }>} */
     let colors = oldState.colors;
 
-    updateColorList(colors);
-
-    document.querySelector('.add-color-button').addEventListener('click', () => {
-        addColor();
+    document.querySelectorAll('.packet').forEach((element) => {
+        element.addEventListener('click', (e) => {
+            vscode.postMessage({ type: 'packetSelected', value: e.target.id});
+        });
     });
 
     // Handle messages sent from the extension to the webview

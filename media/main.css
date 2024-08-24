@@ -38,3 +38,29 @@ body {
 	border: none;
 	margin: 0 auto;
 }
+
+span,div {
+	float: left;
+	font-family: "courier new",monospace;
+	overflow-wrap: break-word;
+	margin: 1ch;
+
+}
+
+.packet-details {
+	display: flex;
+
+}
+
+.packet-hex {
+	max-width: 24ch;
+
+}
+
+.packet-ascii {
+	max-width: 8ch;
+}
+
+.tree li {
+	display: block;
+}

@@ -4,6 +4,13 @@ export class Section {
 	startoffset: number = 0;
 	endoffset: number = 0;
 
+	constructor(
+		protected readonly _packet: DataView
+	) { 
+		this.startoffset = this._packet.byteOffset;
+		this.endoffset = this.startoffset + this._packet.byteLength;
+	}
+
 	static create(bytes: Uint8Array): Section {
 		const dv = new DataView(bytes.buffer, 0, bytes.byteLength);
 		const magic = dv.getUint32(0, true);
@@ -31,6 +38,28 @@ export class Section {
 
 		throw "invalid";
 	}
+
+	get getProperties(): Array<any> {
+		return [];
+	}
+
+	get getHex(): string {
+		let ret = "";
+		for (let i = 0; i < this._packet.byteLength; i++) {
+			ret += this._packet.getUint8(i).toString(16).padStart(2, "0") + " ";
+		}
+		return ret.trimEnd();
+	}
+
+	get getASCII(): string {
+		const decoder = new TextDecoder('ascii');
+		return decoder.decode(this._packet).replaceAll(/[\x00\W]/g, ".");
+
+	}
+
+	get toString() {
+		return "section";
+	}
 }
 
 export class HeaderSection extends Section {
@@ -48,14 +77,14 @@ export class PCAPPacketRecord extends Section {
 	packet: EthernetPacket;
 
 	constructor(bytes: Uint8Array, offset: number, header: PCAPHeaderRecord) {
-		super();
+		
+		super(new DataView(bytes.buffer, offset, ));
 		this.startoffset = offset;
-		const dv = new DataView(bytes.buffer, offset, bytes.byteLength - offset);
 		header.isMS;
-		this.timestamp1 = new Date(dv.getUint32(0, header.getle)*1000);
-		this.timestamp2 = dv.getUint32(4, header.getle);
-		this.capturedlength = dv.getUint32(8, header.getle);
-		this.originallength = dv.getUint32(12, header.getle);
+		this.timestamp1 = new Date(this._packet.getUint32(0, header.getle)*1000);
+		this.timestamp2 = this._packet.getUint32(4, header.getle);
+		this.capturedlength = this._packet.getUint32(8, header.getle);
+		this.originallength = this._packet.getUint32(12, header.getle);
 		this.endoffset = this.capturedlength + offset + 16;
 		this.packet = new EthernetPacket(new DataView(bytes.buffer, offset + 16, this.capturedlength));
 		if(header.isMS) {
@@ -82,10 +111,9 @@ export class PCAPHeaderRecord extends HeaderSection {
 	fcs: number;
 
 	constructor(bytes: Uint8Array) {
-		super();
+		super(new DataView(bytes.buffer, 0, 24));
 		this.startoffset = 0;
-		const dv = new DataView(bytes.buffer, 0, 24);
-		this.magic = dv.getUint32(0, true);
+		this.magic = this._packet.getUint32(0, true);
 		if (
 			this.magic != 0xa1b2c3d4 &&
 			this.magic != 0xa1b23c4d &&
@@ -96,12 +124,12 @@ export class PCAPHeaderRecord extends HeaderSection {
 		}
 		this.le = this.magic == 0xa1b2c3d4 || this.magic == 0xa1b23c4d;
 		this.isMS = this.magic == 0xa1b2c3d4 || this.magic == 0x4d3cb2a1;
-		this.major = dv.getUint16(4, this.le);
-		this.minor = dv.getUint16(6, this.le);
-		this.r1 = dv.getUint32(8, true);
-		this.r2 = dv.getUint32(12, true);
-		this.snaplen = dv.getUint32(16, true);
-		this.linktype = dv.getUint32(20, true);
+		this.major = this._packet.getUint16(4, this.le);
+		this.minor = this._packet.getUint16(6, this.le);
+		this.r1 = this._packet.getUint32(8, true);
+		this.r2 = this._packet.getUint32(12, true);
+		this.snaplen = this._packet.getUint32(16, true);
+		this.linktype = this._packet.getUint32(20, true);
 		this.isFCS = ((this.linktype >> 28) & 0x1) == 0x1;
 		this.fcs = this.linktype >> 29;
 		this.linktype = this.linktype & 0x0fffffff;
@@ -129,27 +157,30 @@ export class PCAPNGSection extends Section {
 		if(bytes.byteLength <= offset) {
 			console.log("byte length less than offset");
 		}
-		const dv = new DataView(bytes.buffer, offset, bytes.byteLength - offset);
+		let dv = new DataView(bytes.buffer, offset, bytes.byteLength - offset);
 		const le = header == undefined ? true: header.le;
 		const blockType = dv.getUint32(0, le);
+		const blockLength = dv.getUint32(4, le);
+		dv = new DataView(bytes.buffer, offset, blockLength);
+
 		switch(blockType) {
 			case 0x0A0D0D0A:
-				return new PCAPNGSectionHeaderBlock(bytes, offset);
+				return new PCAPNGSectionHeaderBlock(dv);
 			case 0x00000001:
 				if(header == undefined) {
 					throw "header required";
 				}
-				return new PCAPNGInterfaceDescriptionBlock(bytes, offset, header);
+				return new PCAPNGInterfaceDescriptionBlock(dv, header);
 			case 0x00000005:
 				if(header == undefined) {
 					throw "header required";
 				}
-				return new PCAPNGInterfaceStatisticsBlock(bytes, offset, header);
+				return new PCAPNGInterfaceStatisticsBlock(dv, header);
 			case 0x00000006:
 				if(header == undefined) {
 					throw "header required";
 				}
-				return new PCAPNGEnhancedPacketBlock(bytes, offset, header);
+				return new PCAPNGEnhancedPacketBlock(dv, header);
 			default:
 				console.log("blocktype: " + blockType)
 				throw "unkown blocktype";
@@ -162,32 +193,29 @@ export class PCAPNGSection extends Section {
 
 
 	}
+
 }
 
 export class PCAPNGInterfaceDescriptionBlock extends Section {
 	blockType: number;
 	blockLength: number;
-	dv: DataView;
 	le: boolean;
 
-	constructor(bytes: Uint8Array, offset: number, header: PCAPNGSectionHeaderBlock) {
-		super();
-		this.startoffset = 0;
-		this.dv = new DataView(bytes.buffer, offset, bytes.byteLength - offset);
-		this.blockType = this.dv.getUint32(0, header.le);
+	constructor(dv: DataView, header: PCAPNGSectionHeaderBlock) {
+		super(dv);
+		this.blockType = this._packet.getUint32(0, header.le);
 		this.le = header.le;
 
-		this.blockLength = this.dv.getUint32(4, header.le);
-		this.endoffset = offset + this.blockLength;
+		this.blockLength = this._packet.getUint32(4, header.le);
 		
 	}
 	
 	get linkType() {
-		return this.dv.getUint16(8, this.le);
+		return this._packet.getUint16(8, this.le);
 	}
 
 	get snapLen() {
-		return this.dv.getUint32(12, this.le);
+		return this._packet.getUint32(12, this.le);
 	}
 
 	get options() {
@@ -195,9 +223,9 @@ export class PCAPNGInterfaceDescriptionBlock extends Section {
 		if(this.blockLength <= 20) {
 			return options;
 		}
-		let i = this.dv.byteOffset + 16;
+		let i = this._packet.byteOffset + 16;
 		do {
-			const option = new PCAPNGOption(this.dv.buffer, i, this.le);
+			const option = new PCAPNGOption(this._packet.buffer, i, this.le);
 			if(option.code != 0) {
 				options.push(option);
 			} else {
@@ -258,53 +286,47 @@ class PCAPNGOption {
 }
 
 export class PCAPNGEnhancedPacketBlock extends Section {
-	dv: DataView;
 	data: EthernetPacket;
 	le: boolean;
 
-	constructor(bytes: Uint8Array, offset: number, header: PCAPNGSectionHeaderBlock) {
-		super();
-		this.startoffset = offset;
-	
-		this.dv = new DataView(bytes.buffer, offset, bytes.byteLength - offset);
-		
+	constructor(dv: DataView, header: PCAPNGSectionHeaderBlock) {
+		super(dv);
 		this.le = header.le;
-		this.endoffset = offset + this.blockLength;
-try{
-		this.data = new EthernetPacket(new DataView(bytes.buffer, offset + 28, this.capturedLength));
-}catch(e){
 	
-	throw '';
-}
+		try{
+			this.data = new EthernetPacket(new DataView(dv.buffer, dv.byteOffset + 28, this.capturedLength));
+		}catch(e){
+			throw '';
+		}
 		
 	}
 
 	get blockType() {
-		return this.dv.getUint32(0, this.le);
+		return this._packet.getUint32(0, this.le);
 	}
 
 	get blockLength() {
-		return this.dv.getUint32(4, this.le);
+		return this._packet.getUint32(4, this.le);
 	}
 
 	get interfaceID() {
-		return this.dv.getUint32(8, this.le);
+		return this._packet.getUint32(8, this.le);
 	}
 
 	get tsHigh() {
-		return this.dv.getUint32(12, this.le);
+		return this._packet.getUint32(12, this.le);
 	}
 
 	get tsLow() {
-		return this.dv.getUint32(16, this.le);
+		return this._packet.getUint32(16, this.le);
 	}
 
 	get capturedLength() {
-		return this.dv.getUint32(20, this.le);
+		return this._packet.getUint32(20, this.le);
 	}
 
 	get originalLength() {
-		return this.dv.getUint32(24, this.le);
+		return this._packet.getUint32(24, this.le);
 	}
 
 	get options() {
@@ -316,9 +338,9 @@ try{
 		if(optionstart >= this.blockLength-4) {
 			return options;
 		}
-		let i = this.dv.byteOffset + optionstart;
+		let i = this._packet.byteOffset + optionstart;
 		do {
-			const option = new PCAPNGOption(this.dv.buffer, i, this.le);
+			const option = new PCAPNGOption(this._packet.buffer, i, this.le);
 			if(option.code != 0) {
 				options.push(option);
 			} else {
@@ -361,38 +383,43 @@ try{
 		}
 		return `Enhanced Packet Block: ${this.data.toString}</br>${this.options != undefined && this.options.length ? ", options: " + optionsText : ""}`;
 	}
+
+	get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("*Enhanced Packet Block");
+		arr.push(`Interface ID: ${this.interfaceID}`);
+
+		arr.push(this.data.getProperties);
+		return arr;
+	}
 }
 
 class PCAPNGInterfaceStatisticsBlock extends Section {
-	dv: DataView;
 	le: boolean;
 
-	constructor(bytes: Uint8Array, offset: number, header: PCAPNGSectionHeaderBlock) {
-		super();
-		this.startoffset = offset;
-		this.dv = new DataView(bytes.buffer, offset, bytes.byteLength - offset);
+	constructor(dv: DataView, header: PCAPNGSectionHeaderBlock) {
+		super(dv);
 		this.le = header.le;
-		this.endoffset = offset + this.blockLength;
 	}
 
 	get blockType() {
-		return this.dv.getUint32(0, this.le);
+		return this._packet.getUint32(0, this.le);
 	}
 
 	get blockLength() {
-		return this.dv.getUint32(4, this.le);
+		return this._packet.getUint32(4, this.le);
 	}
 
 	get interfaceID() {
-		return this.dv.getUint32(8, this.le);
+		return this._packet.getUint32(8, this.le);
 	}
 
 	get tsHigh() {
-		return this.dv.getUint32(12, this.le);
+		return this._packet.getUint32(12, this.le);
 	}
 
 	get tsLow() {
-		return this.dv.getUint32(16, this.le);
+		return this._packet.getUint32(16, this.le);
 	}
 
 
@@ -401,10 +428,10 @@ class PCAPNGInterfaceStatisticsBlock extends Section {
 		if(this.blockLength <= 24) {
 			return options;
 		}
-		let i = this.dv.byteOffset + 20;
+		let i = this._packet.byteOffset + 20;
 		try{
 		do {
-			const option = new PCAPNGOption(this.dv.buffer, i, this.le);
+			const option = new PCAPNGOption(this._packet.buffer, i, this.le);
 			if(option.code != 0) {
 				options.push(option);
 			} else {
@@ -414,7 +441,7 @@ class PCAPNGInterfaceStatisticsBlock extends Section {
 			if(option.length % 4) {
 				i += 4 - option.length % 4;
 			}
-		} while(i < this.dv.byteLength-4);
+		} while(i < this._packet.byteLength-4);
 		}catch(e) {
 			throw "sada";
 		}
@@ -464,17 +491,12 @@ export class PCAPNGSectionHeaderBlock extends HeaderSection {
 	blockType: number;
 	blockLength: number;
 	le: boolean;
-	dv: DataView;
 
-	constructor(bytes: Uint8Array, offset: number) {
-		super();
-		this.startoffset = 0;
-		this.dv = new DataView(bytes.buffer, offset, bytes.byteLength - offset);
-		this.blockType = this.dv.getUint32(0, true);
-		this.le = this.dv.getUint32(8, true) == 0x1A2B3C4D;
-
-		this.blockLength = this.dv.getUint32(4, this.le);
-		this.endoffset = this.blockLength;
+	constructor(dv: DataView) {
+		super(dv);
+		this.blockType = this._packet.getUint32(0, true);
+		this.le = this._packet.getUint32(8, true) == 0x1A2B3C4D;
+		this.blockLength = this._packet.getUint32(4, this.le);
 	}
 
 	get fileType() {
@@ -512,9 +534,9 @@ export class PCAPNGSectionHeaderBlock extends HeaderSection {
 		if(this.blockLength <= 24) {
 			return options;
 		}
-		let i = this.dv.byteOffset + 24;
+		let i = this._packet.byteOffset + 24;
 		do {
-			const option = new PCAPNGOption(this.dv.buffer, i, this.le);
+			const option = new PCAPNGOption(this._packet.buffer, i, this.le);
 			if(option.code != 0) {
 				options.push(option);
 			} else {

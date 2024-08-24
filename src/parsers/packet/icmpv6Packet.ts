@@ -9,15 +9,17 @@ export class ICMPv6Packet extends GenericPacket {
 		this.packet = packet;
 	}
 
-    get message() {
-        return ICMPv6Message.create(this.packet).toString;
+    get message(): ICMPv6Message {
+        return ICMPv6Message.create(this.packet);
     }
 
-	
-
 	get toString() {
-		return `ICMPv6 ${this.message} `;
+		return `ICMPv6 ${this.message.toString} `;
 	}
+
+    get getProperties() {
+        return this.message.getProperties;
+    }
 }
 
 class ICMPv6Message {
@@ -36,17 +38,25 @@ class ICMPv6Message {
     }
 
     get type() {
-        return this.packet.getUint8(0)
+        return this.packet.getUint8(0);
     }
 
     get code() {
-        return this.packet.getUint8(1)
+        return this.packet.getUint8(1);
     }
 
     get checksum() {
-        return this.packet.getUint16(2)
+        return this.packet.getUint16(2);
     }
-
+    
+    get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Control Message Protocol v6");
+		arr.push(`Type: Unknown Message Type (${this.type})`);
+		arr.push(`Code: (${this.code})`);
+		arr.push(`Checksum: (0x${this.checksum.toString(16)})`);
+		return arr;
+	}
 }
 
 class ICMPv6Error extends ICMPv6Message {
@@ -58,16 +68,26 @@ class ICMPv6Error extends ICMPv6Message {
     static create(dv:DataView): ICMPv6Error {
         switch(dv.getUint8(0)) {
             case 1:
-
+                return new ICMPv6DestinationUnreachable(dv);
+            case 2:
+                return new ICMPv6PacketTooBig(dv);
+            case 3:
+                return new ICMPv6TimeExceeded(dv);
+            case 4:
+                return new ICMPv6ParameterProblem(dv);
             default:
                 return new ICMPv6Error(dv);
         }
     }
 
-    get toString() {
-        return `Type: ${this.type} Code: ${this.code}`;
+    get invokingPacket() {
+        return "not done";
     }
 
+    get toString() {
+        return `Type: ${this.type} Code: ${this.code} Invoking Packet: ${this.invokingPacket}`;
+    }
+    
 }
 
 class ICMPv6Info extends ICMPv6Message {
@@ -113,14 +133,26 @@ class ICMPv6EchoRequest extends ICMPv6Info {
     get data() {
         let ret = "";
 		for (let i = 8; i < this.packet.byteLength; i++) {
-			ret += this.packet.getUint8(i).toString(16).padStart(2, "0") + " ";
+			ret += this.packet.getUint8(i).toString(16).padStart(2, "0");
 		}
-		return ret.trimEnd();
+		return ret;
     }
 
     get toString() {
-        return `Echo Response, Identifier: ${this.code} Sequence Num: ${this.sequenceNum} Data: ${this.data}`;
+        return `Echo Request, Identifier: ${this.code} Sequence Num: ${this.sequenceNum} Data: ${this.data}`;
     }
+
+    get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Control Message Protocol v6");
+		arr.push(`Type: Echo Request (${this.type})`);
+		arr.push(`Code: (${this.code})`);
+		arr.push(`Checksum: (0x${this.checksum.toString(16)})`);
+		arr.push(`Identifier: (0x${this.identifier.toString(16)})`);
+        arr.push(`Sequence: (${this.sequenceNum})`);
+        arr.push(`<ul> <li> <details> <summary> Data (32 Bytes) </summary> <ul> <li> ${this.data} </li> </ul> </details> </li> </ul>`);
+		return arr;
+	}
 }
 
 class ICMPv6EchoReply extends ICMPv6Info {
@@ -148,6 +180,18 @@ class ICMPv6EchoReply extends ICMPv6Info {
     get toString() {
         return `Echo Reply, Identifier: ${this.code} Sequence Num: ${this.sequenceNum} Data: ${this.data}`;
     }
+
+    get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Control Message Protocol v6");
+		arr.push(`Type: Echo Reply (${this.type})`);
+		arr.push(`Code: (${this.code})`);
+		arr.push(`Checksum: (0x${this.checksum.toString(16)})`);
+		arr.push(`Identifier: (0x${this.identifier.toString(16)})`);
+        arr.push(`Sequence: (${this.sequenceNum})`);
+        arr.push(`<ul> <li> <details> <summary> Data (32 Bytes) </summary> <ul> <li> ${this.data} </li> </ul> </details> </li> </ul>`);
+		return arr;
+	}
 }
 
 class ICMPv6NeighborSolicitation extends ICMPv6Info {
@@ -164,7 +208,7 @@ class ICMPv6NeighborSolicitation extends ICMPv6Info {
     }   
 
     get options() {
-        let ret = "Source Link-layer Address: ";
+        let ret = "Source Link-layer Address : ";
 		for(let i = 0; i < 6; i++) {
 			ret += this.packet.getUint8(26 + i).toString(16).padStart(2, "0");
 			if(i == 5) {
@@ -180,6 +224,18 @@ class ICMPv6NeighborSolicitation extends ICMPv6Info {
     get toString() {
         return `Neighbor Solicitation, Target Address: ${this.targetAddress.correctForm()}${this.packet.byteLength > 24 ? " Options: " + this.options: ""}`;
     }
+
+    get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Control Message Protocol v6");
+		arr.push(`Type: Neighbor Solicitation (${this.type})`);
+		arr.push(`Code: (${this.code})`);
+		arr.push(`Checksum: (0x${this.checksum.toString(16)})`);
+		arr.push(`Reserved: 00000000`);
+        arr.push(`Target Address: (${this.targetAddress.correctForm()})`);
+        arr.push(`ICMPv6 Option: ${this.options})`);
+		return arr;
+	}
 }
 
 class ICMPv6NeighborAdvertisement extends ICMPv6Info {
@@ -245,4 +301,160 @@ class ICMPv6NeighborAdvertisement extends ICMPv6Info {
     get toString() {
         return `Neighbor Advertisement, Target Address: ${this.targetAddress.correctForm()}, Flags: ${this.getFlags}${this.packet.byteLength > 24 ? " " + this.options: ""}`;
     }
+
+    get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Control Message Protocol v6");
+		arr.push(`Type: Neighbor Advertisement (${this.type})`);
+		arr.push(`Code: (${this.code})`);
+		arr.push(`Checksum: (0x${this.checksum.toString(16)})`);
+        arr.push(`Flags: ${this.getFlags}`);
+		arr.push(`Reserved: 00000000`);
+        arr.push(`Target Address: (${this.targetAddress.correctForm()})`);
+        arr.push(`ICMPv6 Option: ${this.options})`);
+		return arr;
+	}
+}
+
+class ICMPv6DestinationUnreachable extends ICMPv6Error {
+    
+    constructor(dv: DataView) {
+        super(dv);
+    }
+
+    get codeMessage() {
+        switch(this.code) {
+            case 0:
+                return "No route to destination";
+            case 1:
+                return "Communication with destination administratively prohibited";
+            case 2:
+                return "Beyond scope of source address";
+            case 3:
+                return "Address unreachable";
+            case 4:
+                return "Port unreachable";
+            case 5:
+                return "Source address failed ingress/egress policy";
+            case 6:
+                return "Reject route to destination";
+            default:
+                return;
+
+        }
+    }
+
+    get toString() {
+        return `Destination Unreachable Error: ${this.codeMessage}, Invoking Packet: ${this.invokingPacket}`;
+    }
+
+    get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Control Message Protocol v6");
+		arr.push(`Type: Destination Unreachable (${this.type})`);
+		arr.push(`Code: ${this.codeMessage} (${this.code})`);
+		arr.push(`Checksum: (0x${this.checksum.toString(16)})`);
+		arr.push(`<ul> <li> <details> <summary> Invoking Packet </summary> <ul> <li> ${this.invokingPacket} </li> </ul> </details> </li> </ul>`);
+		return arr;
+	}
+    
+}
+
+class ICMPv6PacketTooBig extends ICMPv6Error {
+    
+    constructor(dv: DataView) {
+        super(dv);
+    }
+
+    get mtu() {
+        return this.packet.getUint32(4);
+    }
+
+    get toString() {
+        return `Packet Too Big Error, MTU: ${this.mtu}, Invoking Packet: ${this.invokingPacket}`;
+    }
+
+    get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Control Message Protocol v6");
+		arr.push(`Type: Packet Too Big (${this.type})`);
+		arr.push(`Code: (${this.code})`);
+		arr.push(`Checksum: (0x${this.checksum.toString(16)})`);
+        arr.push(`Code: (${this.mtu})`);
+		arr.push(`<ul> <li> <details> <summary> Invoking Packet </summary> <ul> <li> ${this.invokingPacket} </li> </ul> </details> </li> </ul>`);
+		return arr;
+	}
+}
+
+class ICMPv6TimeExceeded extends ICMPv6Error {
+    
+    constructor(dv: DataView) {
+        super(dv);
+    }
+
+    get codeMessage() {
+        switch(this.code) {
+            case 0:
+                return "Hop limit exceeded in transit";
+            case 1:
+                return "Fragment reassembly time exceeded";
+            default:
+                return;
+
+        }
+    }
+
+    get toString() {
+        return `Time Exceeded Error: ${this.codeMessage}, Invoking Packet: ${this.invokingPacket}`;
+    }
+
+    get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Control Message Protocol v6");
+		arr.push(`Type: Destination Unreachable (${this.type})`);
+		arr.push(`Code: ${this.codeMessage} (${this.code})`);
+		arr.push(`Checksum: (0x${this.checksum.toString(16)})`);
+		arr.push(`<ul> <li> <details> <summary> Invoking Packet </summary> <ul> <li> ${this.invokingPacket} </li> </ul> </details> </li> </ul>`);
+		return arr;
+	}
+}
+
+class ICMPv6ParameterProblem extends ICMPv6Error {
+    
+    constructor(dv: DataView) {
+        super(dv);
+    }
+    
+    get pointer() {
+        return this.packet.getUint32(4);
+    }
+
+    get codeMessage() {
+        switch(this.code) {
+            case 0:
+                return "Erroneous header field encountered";
+            case 1:
+                return "Unrecognized Next Header type encountered";
+            case 2:
+                return "Unrecognized IPv6 option encountered";
+            default:
+                return;
+
+        }
+    }
+
+    get toString() {
+        return `Parameter Problem Error: ${this.codeMessage}, Pointer: ${this.pointer}, Invoking Packet: ${this.invokingPacket}`;
+    }
+
+    get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Control Message Protocol v6");
+		arr.push(`Type: Destination Unreachable (${this.type})`);
+		arr.push(`Code: ${this.codeMessage} (${this.code})`);
+		arr.push(`Checksum: (0x${this.checksum.toString(16)})`);
+        arr.push(`Pointer: ${this.pointer}`);
+		arr.push(`<ul> <li> <details> <summary> Invoking Packet </summary> <ul> <li> ${this.invokingPacket} </li> </ul> </details> </li> </ul>`);
+		return arr;
+	}
 }

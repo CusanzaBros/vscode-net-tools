@@ -75,4 +75,36 @@ export class EthernetPacket {
 		// 00:11:22:33:44:55 > 00:11:22:33:44:55 (0x800)
 		return `${this.srcMAC} > ${this.dstMAC} (0x${this.proto.toString(16).padStart(4, "0")}) ${this.innerPacket.toString}`;
 	}
+
+	get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("*Ethernet II");
+		arr.push(`Source Address: ${this.srcMAC}`);
+		arr.push(`Destination Address: ${this.dstMAC}`);
+		switch (this.proto) {
+			case 0x800:
+				if(this.packet.getUint8(14) >> 4 == 4) {
+					arr.push(`Type: IPv4 (0x${this.proto.toString(16)})`);
+				} else if(this.packet.getUint8(0) >> 4 == 6) {
+					arr.push(`Type: IPv6 (0x${this.proto.toString(16)})`);
+				} else {
+					arr.push(`Type: Unknown (0x${this.proto.toString(16)})`);
+				}
+				break;
+
+			case 0x806:
+				arr.push(`Type: ARP (0x${this.proto.toString(16)})`);
+				break;
+			case 0x86dd:
+				arr.push(`Type: IPv6 (0x${this.proto.toString(16)})`);
+				break;
+			default:
+				arr.push(`Type: Unknown (0x${this.proto.toString(16)})`);
+		}
+		const arr2: Array<any> = [];
+		arr2.push("*Packet data");
+		arr2.push(arr);
+		arr2.push(this.innerPacket.getProperties);
+		return arr2;
+	}
 }
