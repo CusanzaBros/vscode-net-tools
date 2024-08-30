@@ -1,8 +1,12 @@
 {
-  "name": "packetreader",
-  "displayName": "PacketReader",
-  "description": "reads packet capture files",
-  "version": "0.0.1",
+  "name": "vscode-net-tools",
+  "displayName": "Network Tools",
+  "description": "Network tools, including pcap and pcapng file parser and viewer",
+  "version": "1.0.0",
+  "publisher": "CusanzaBros",
+  "repository": "https://github.com/CusanzaBros/vscode-net-tools",
+  "license": "MIT",
+  "icon": "media/icon.png",
   "engines": {
     "vscode": "^1.91.0"
   },
@@ -10,7 +14,8 @@
     "Other"
   ],
   "activationEvents": [],
-  "main": "./out/extension.js",
+  "keywords": ["pcap", "pcapng", "network", "pktmon", "wireshark"],
+  "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
       "panel": [

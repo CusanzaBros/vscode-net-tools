@@ -14,6 +14,6 @@ export class GenericPacket {
 	}
 
 	get getProperties(): Array<any> {
-		return [];
+		return ["unknown data"];
 	}
 }

@@ -211,7 +211,7 @@ class ICMPv6NeighborSolicitation extends ICMPv6Info {
         let ret = "Source Link-layer Address : ";
 		for(let i = 0; i < 6; i++) {
 			ret += this.packet.getUint8(26 + i).toString(16).padStart(2, "0");
-			if(i == 5) {
+			if(i === 5) {
 				break;
 			}
 			ret += ":";
@@ -288,7 +288,7 @@ class ICMPv6NeighborAdvertisement extends ICMPv6Info {
         let ret = "Target Link-layer Address: ";
 		for(let i = 0; i < 6; i++) {
 			ret += this.packet.getUint8(26 + i).toString(16).padStart(2, "0");
-			if(i == 5) {
+			if(i === 5) {
 				break;
 			}
 			ret += ":";

@@ -11,11 +11,11 @@ export class EthernetPacket {
 		this.packet = packet;
 		switch (this.proto) {
 			case 0x800:
-				if(this.packet.getUint8(14) >> 4 == 4) {
+				if(this.packet.getUint8(14) >> 4 === 4) {
 					this.innerPacket = new IPv4Packet(
 						new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
 					);
-				} else if(this.packet.getUint8(0) >> 4 == 6) {
+				} else if(this.packet.getUint8(0) >> 4 === 6) {
 					this.innerPacket = new IPv6Packet(
 						new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
 					);
@@ -83,9 +83,9 @@ export class EthernetPacket {
 		arr.push(`Destination Address: ${this.dstMAC}`);
 		switch (this.proto) {
 			case 0x800:
-				if(this.packet.getUint8(14) >> 4 == 4) {
+				if(this.packet.getUint8(14) >> 4 === 4) {
 					arr.push(`Type: IPv4 (0x${this.proto.toString(16)})`);
-				} else if(this.packet.getUint8(0) >> 4 == 6) {
+				} else if(this.packet.getUint8(0) >> 4 === 6) {
 					arr.push(`Type: IPv6 (0x${this.proto.toString(16)})`);
 				} else {
 					arr.push(`Type: Unknown (0x${this.proto.toString(16)})`);
@@ -101,10 +101,7 @@ export class EthernetPacket {
 			default:
 				arr.push(`Type: Unknown (0x${this.proto.toString(16)})`);
 		}
-		const arr2: Array<any> = [];
-		arr2.push("*Packet data");
-		arr2.push(arr);
-		arr2.push(this.innerPacket.getProperties);
-		return arr2;
+
+		return [arr, this.innerPacket.getProperties];
 	}
 }

@@ -1,66 +1,94 @@
 body {
-	background-color: transparent;
-}
-
-.color-list {
-	list-style: none;
-	padding: 0;
-}
-
-.color-entry {
-	width: 100%;
-	display: flex;
-	margin-bottom: 0.4em;
-	border: 1px solid var(--vscode-input-border);
-}
-
-.color-preview {
-	width: 2em;
-	height: 2em;
-}
-
-.color-preview:hover {
-	outline: inset white;
-}
-
-.color-input {
-	display: block;
-	flex: 1;
-	width: 100%;
-	color: var(--vscode-input-foreground);
-	background-color: var(--vscode-input-background);
-	border: none;
-	padding: 0 0.6em;
-}
-
-.add-color-button {
-	display: block;
-	border: none;
-	margin: 0 auto;
-}
-
-span,div {
-	float: left;
-	font-family: "courier new",monospace;
-	overflow-wrap: break-word;
-	margin: 1ch;
-
+  background-color: transparent;
 }
 
 .packet-details {
-	display: flex;
+  display: flex;
+}
 
+.packet-properties {
+  flex: 1;
 }
 
 .packet-hex {
-	max-width: 24ch;
+  float: left;
 
+  font-family: "courier new", monospace;
+
+  overflow-wrap: break-word;
+
+  margin: 1ch;
+
+  max-width: 24ch;
 }
 
 .packet-ascii {
-	max-width: 8ch;
+  float: left;
+
+  font-family: "courier new", monospace;
+
+  overflow-wrap: break-word;
+
+  margin: 1ch;
+
+  max-width: 8ch;
+}
+
+.tree {
+  float: left;
+
+  font-family: "courier new", monospace;
+
+  margin: 1ch;
+
+  display: block;
 }
 
 .tree li {
-	display: block;
+  display: block;
+
+  position: relative;
+
+  padding-left: 2ch;
+}
+
+.tree ul {
+  padding-left: 0;
+}
+
+.tree span:hover {
+  outline: 1px dotted #fff;
+}
+
+.tree summary {
+  display: block;
+
+  cursor: pointer;
+}
+
+.tree summary::marker,
+.tree summary::-webkit-details-marker {
+  display: none;
+}
+
+.tree summary:focus {
+  outline: none;
+}
+
+.tree summary:focus-visible {
+  outline: 1px dotted #000;
+}
+
+.tree summary::before {
+  display: block;
+
+  position: absolute;
+
+  left: 0;
+
+  content: "˃";
+}
+
+.tree details[open] > summary::before {
+  content: "˅";
 }

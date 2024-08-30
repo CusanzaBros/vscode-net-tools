@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Disposable, disposeAll } from './dispose';
-import { Section, HeaderSection } from "./parsers/file/pcap";
+import { Section, HeaderSection } from "./parsers/file/section";
 import { PacketViewProvider } from './packetdetails';
 
 

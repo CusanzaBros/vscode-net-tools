@@ -92,9 +92,38 @@ export class IPv4Packet extends GenericPacket {
 		return ret;
 	}
 
-	
-
 	get toString() {
 		return `IPv${this.version}, ${this.ihl}, ${this.typeOfService}, ${this.totalLength}, ${this.identification}, ${this.flags}, ${this.fragmentOffset}, ${this.timeToLive}, 0x${this.protocol.toString(16).padStart(2, "0")}, ${this.headerChecksum}, ${this.srcAddress} > ${this.destAddress}, ${this.innerPacket.toString} `;
+	}
+
+	get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Protocol Version 4");
+		arr.push(`Version: ${this.version}`);
+		arr.push(`Header Length: ${this.ihl*4} bytes (${this.ihl})`);
+		arr.push(`Type of Service: ${this.typeOfService}`);
+		arr.push(`Total Length: ${this.totalLength}`);
+		arr.push(`Identification: 0x${this.identification.toString(16)} (${this.identification})`);
+		arr.push(`Flags: 0x${this.flags.toString(16)}`);
+		arr.push(`Fragment Offset: ${this.fragmentOffset}`);
+		arr.push(`Time to Live: ${this.timeToLive}`);
+		switch (this.protocol) {
+			case 0x01:
+				arr.push(`Protocol: ICMP (${this.protocol})`);
+				break;
+			case 0x06:
+				arr.push(`Protocol: TCP (${this.protocol})`);
+				break;
+			case 0x11:
+				arr.push(`Protocol: UDP (${this.protocol})`);
+				break;
+			default:
+				arr.push(`Protocol: Unknown (${this.protocol})`);
+		}
+		arr.push(`Header Checksum: (${this.headerChecksum})`);
+		arr.push(`Source Address: (${this.srcAddress})`);
+		arr.push(`Destination Address: (${this.destAddress})`);
+
+		return [arr, this.innerPacket.getProperties];
 	}
 }

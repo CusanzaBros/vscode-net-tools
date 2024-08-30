@@ -9,14 +9,14 @@ export class UDPPacket extends GenericPacket {
 	constructor(packet: DataView) {
 		super(packet);
 		this.packet = packet;
-		if(this.destPort == 53 || this.srcPort == 53 || this.destPort == 5353 || this.srcPort == 5353) {
+		if(this.destPort === 53 || this.srcPort === 53 || this.destPort === 5353 || this.srcPort === 5353) {
 			this.innerPacket = new DNSPacket(
 				new DataView(packet.buffer, packet.byteOffset + 8, packet.byteLength - 8),
 			);
 			return;
 		}
 
-		if(this.destPort == 67 || this.srcPort == 67 || this.destPort == 68 || this.srcPort == 68) {
+		if(this.destPort === 67 || this.srcPort === 67 || this.destPort === 68 || this.srcPort === 68) {
 			this.innerPacket = new DHCPPacket(
 				new DataView(packet.buffer, packet.byteOffset + 8, packet.byteLength - 8),
 			);
@@ -48,5 +48,16 @@ export class UDPPacket extends GenericPacket {
 
 	get toString() {
 		return `UDP ${this.srcPort} > ${this.destPort}, ${this.length}, ${this.checksum} ${this.innerPacket.toString}`;
+	}
+
+	get getProperties() {
+		const arr: Array<any> = [];
+		arr.push(`User Datagram Protocol`);
+		arr.push(`Source Port: ${this.srcPort}`);
+		arr.push(`Destination Port: ${this.destPort}`);
+		arr.push(`Length: ${this.length}`);
+		arr.push(`Checksum: 0x${this.checksum.toString(16)}`);
+		
+		return [arr, this.innerPacket.getProperties];
 	}
 }

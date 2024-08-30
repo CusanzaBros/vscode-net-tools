@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the "packetreader" extension will be documented in this file.
+All notable changes to the "vscode-net-tools" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
