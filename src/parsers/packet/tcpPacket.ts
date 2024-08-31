@@ -107,4 +107,30 @@ export class TCPPacket extends GenericPacket {
 	get toString() {
 		return `TCP ${this.srcPort} > ${this.destPort}, ${this.seqNum}, ${this.ackNum}, ${this.dataOffset}, ${this.getFlags}, ${this.window}, ${this.checksum}, ${this.urgentPointer}${this.innerPacket.packet.byteLength > 0 ? "," : ""} ${this.innerPacket.toString}`;
 	}
+
+	get getProperties() {
+		const arr: Array<any> = [];
+		arr.push(`Transmission Control Protocol`);
+		arr.push(`Source Port: ${this.srcPort}`);
+		arr.push(`Destination Port: ${this.destPort}`);
+		arr.push(`Sequence number: ${this.seqNum}`);
+		arr.push(`Acknowledgement number: ${this.ackNum}`);
+		arr.push(`Header Length: ${this.dataOffset * 4} bytes (${this.dataOffset})`);
+		const flags: Array<any> = [];
+		flags.push(`Flags`);
+		flags.push(`Urgent: ${this.urg ? "Set (1)" : "Not set (0)"}`);
+		flags.push(`Acknowledgement: ${this.ack ? "Set (1)" : "Not set (0)"}`);
+		flags.push(`Push: ${this.psh ? "Set (1)" : "Not set (0)"}`);
+		flags.push(`Reset: ${this.rst ? "Set (1)" : "Not set (0)"}`);
+		flags.push(`Syn: ${this.syn ? "Set (1)" : "Not set (0)"}`);
+		flags.push(`Fin: ${this.fin ? "Set (1)" : "Not set (0)"}`);
+		arr.push(flags);
+		arr.push(`Window: ${this.window}`);
+		arr.push(`Checksum: 0x${this.checksum.toString(16)}`);
+		arr.push(`Urgent Pointer: ${this.urgentPointer}`);
+		// this.options.forEach(item => {
+		// 	arr.push(item.toString);
+		// });
+		return [arr, this.innerPacket.getProperties];
+	}
 }
