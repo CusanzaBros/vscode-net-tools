@@ -104,6 +104,35 @@ export class TCPPacket extends GenericPacket {
 		return this.packet.getUint16(18);
 	}
 
+	get options(): TCPOption[] {
+		if (this.packet.byteLength <= 20) {
+			return [];
+		}
+		
+		const headerLength = (this.packet.getUint8(12) >> 4) * 4;
+		if (headerLength <= 20) {
+			return [];
+		}
+		
+		let i = this.packet.byteOffset + 20;
+		const options: TCPOption[] = [];
+		try {
+			while (i < headerLength + this.packet.byteOffset) {
+				const option = TCPOption.create(new DataView(this.packet.buffer, i, this.packet.buffer.byteLength - i));
+				if (option.length > 0) {
+					i += option.length;
+					options.push(option);
+				} else {
+					i += 1;
+				}
+			}
+		} catch (e) {
+
+		}
+	
+		return options;
+	}
+
 	get toString() {
 		return `TCP ${this.srcPort} > ${this.destPort}, ${this.seqNum}, ${this.ackNum}, ${this.dataOffset}, ${this.getFlags}, ${this.window}, ${this.checksum}, ${this.urgentPointer}${this.innerPacket.packet.byteLength > 0 ? "," : ""} ${this.innerPacket.toString}`;
 	}
@@ -128,9 +157,120 @@ export class TCPPacket extends GenericPacket {
 		arr.push(`Window: ${this.window}`);
 		arr.push(`Checksum: 0x${this.checksum.toString(16)}`);
 		arr.push(`Urgent Pointer: ${this.urgentPointer}`);
-		// this.options.forEach(item => {
-		// 	arr.push(item.toString);
-		// });
+		if(this.options.length > 0) {
+			const optArr: Array<any> = [];
+			optArr.push(`Options`);
+			this.options.forEach(item => {
+				optArr.push(item.toString);
+			});
+			arr.push(optArr);
+		}
 		return [arr, this.innerPacket.getProperties];
 	}
+}
+
+class TCPOption {
+    optionData: DataView;
+    length: number;
+    code: number;
+
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        this.optionData = new DataView(dv.buffer, offset, length);
+        this.length = length;
+        this.code = code;
+    }
+
+    static create(dv: DataView): TCPOption {
+        const type = dv.getUint8(0);
+        switch (type) {
+            case 0: // End of option list
+                return new TCPOption(dv, 0, 0, 0);
+            case 1:
+                return new TCPOptionNOP(dv, 0, 1, 1);
+            case 2:
+                return new TCPOptionMSS(dv, dv.byteOffset + 2, dv.getUint8(1), 2);
+            case 3:
+                return new TCPOptionWindowScale(dv, dv.byteOffset + 2, dv.getUint8(1), 3);
+            case 4:
+                return new TCPOptionSACKPermitted(dv, dv.byteOffset + 2, dv.getUint8(1), 4);
+            case 8:
+                return new TCPOptionTimestamp(dv, dv.byteOffset + 2, dv.getUint8(1), 8);
+            default:
+                return new TCPOption(dv, dv.byteOffset + 2, dv.getUint8(1), type);
+        }
+    }
+
+    get toString(): string {
+        return `Option: ${this.code}, Length: ${this.length}`;
+    }
+}
+
+class TCPOptionNOP extends TCPOption {
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
+
+    get toString(): string {
+        return `No-Operation (${this.code})`;
+    }
+}
+
+class TCPOptionMSS extends TCPOption {
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
+
+    get mss(): number {
+        return this.optionData.getUint16(0);
+    }
+
+    get toString(): string {
+        return `Maximum Segment Size Option (${this.code}) - MSS: ${this.mss}`;
+    }
+}
+
+class TCPOptionWindowScale extends TCPOption {
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
+
+    get shiftCount(): number {
+        return this.optionData.getUint8(0);
+    }
+
+    get toString(): string {
+        return `Window Scale Option (${this.code}) - Shift Count: ${this.shiftCount}`;
+    }
+}
+
+class TCPOptionSACKPermitted extends TCPOption {
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
+
+    get isPermitted(): boolean {
+        return this.length === 2;
+    }
+
+    get toString(): string {
+        return `SACK Permitted Option (${this.code}) - Permitted: ${this.isPermitted}`;
+    }
+}
+
+class TCPOptionTimestamp extends TCPOption {
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
+
+    get timestamp(): number {
+        return this.optionData.getUint32(0);
+    }
+
+    get echoReply(): number {
+        return this.optionData.getUint32(4);
+    }
+
+    get toString(): string {
+        return `Timestamp Option (${this.code}) - Timestamp Value: ${this.timestamp}, Timestamp Echo Reply: ${this.echoReply}`;
+    }
 }
