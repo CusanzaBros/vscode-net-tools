@@ -97,6 +97,10 @@ export class PCAPPacketRecord extends Section {
 	get toString() {
 		return `${this.timestamp1.getFullYear()}-${this.timestamp1.getMonth()}-${this.timestamp1.getDay()} ${this.timestamp1.getHours()}:${this.timestamp1.getMinutes()}:${this.timestamp1.getSeconds()}.${this.timestamp2.toString()} Length ${this.capturedlength.toString()}/${this.originallength.toString()}: ${this.packet.toString}`;
 	}
+
+	get getProperties(): Array<any> {
+		return [this.packet.getProperties];
+	}
 }
 
 export class PCAPHeaderRecord extends HeaderSection {
@@ -187,15 +191,8 @@ export class PCAPNGSection extends Section {
 				console.log("blocktype: " + blockType);
 				throw new Error("unkown blocktype");
 		}
-		
-
-
-
-
-
-
 	}
-
+	
 }
 
 export class PCAPNGInterfaceDescriptionBlock extends Section {
