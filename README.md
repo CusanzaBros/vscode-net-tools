@@ -18,7 +18,10 @@ The goal of this extension is to provide a set useful tools for anyone that need
 
 * Ability to search within and copy/paste from ouput.
 
+* Ability to save as text to make sharing content easier.
+
 * Maximum compatibility with PCAP and PCAPNG files, including those output by pktmon and wireshark, with graceful handling of unknown protocols.
+
 
 ## Requirements
 
@@ -26,6 +29,7 @@ This extension does not require any addition software, and works on Windows and 
 
 ## Contributions
 
+This project was written and is maintained by Zach Cusanza.
 Please submit issues with this extension and feature requests to the [vscode-net-tools github repo](https://github.com/CusanzaBros/vscode-net-tools/issues).
 
 Contributions are also welcome!

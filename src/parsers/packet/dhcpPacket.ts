@@ -161,7 +161,7 @@ export class DHCPPacket extends GenericPacket {
 					
 				}
 				
-			} while(true);
+			} while(DHCPOption.create(new DataView(this.packet.buffer, i, this.packet.buffer.byteLength - i)).code !== 255);
 		} catch(e) {
 			
 		} 
@@ -201,217 +201,197 @@ export class DHCPPacket extends GenericPacket {
 		arr.push(`Client MAC address: ${this.chaddr}`);
 		arr.push(`Server host name${this.sname.length ? ": " + this.sname : " not given"}`);
 		arr.push(`Boot file name${this.file.length ? ": " + this.file : " not given"}`);
-		this.options.forEach(item => {
-			arr.push(item.toString);
-		});
+		if(this.options.length > 0) {
+			const optArr: Array<any> = [];
+			optArr.push(`Options`);
+			this.options.forEach(item => {
+				optArr.push(item.toString);
+			});
+			arr.push(optArr);
+		}
 		return arr;
 	}
 }
 
 class DHCPOption {
-	optionData: DataView = {} as DataView;
-	length: number;
-	code: number;
+    optionData: DataView;
+    length: number;
+    code: number;
 
-	constructor(dv: DataView, offset: number, length: number, code: number) {
-		if(length === 0) {
-			this.optionData = dv;
-		} else {
-			this.optionData = new DataView(dv.buffer, offset, length);
-		}
-		this.length = length;
-		this.code = code;
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        this.optionData = new DataView(dv.buffer, offset, length);
+        this.length = length;
+        this.code = code;
+    }
 
-	}
+    static create(dv: DataView): DHCPOption {
+        switch(dv.getUint8(0)) {
+            case 0:
+                return new DHCPOption(dv, 0, 0, 0);
+            case 12:
+                return new DHCPOptionHostName(dv, dv.byteOffset + 2, dv.getUint8(1), 12);
+            case 50:
+                return new DHCPOptionRequestedAddress(dv, dv.byteOffset + 2, 4, 50);
+            case 51:
+                return new DHCPOptionIPLeaseTime(dv, dv.byteOffset + 2, 4, 51);
+            case 53:
+                return new DHCPOptionMessageType(dv, dv.byteOffset + 2, 1, 53);
+            case 54:
+                return new DHCPOptionServerIdentifier(dv, dv.byteOffset + 2, 4, 54);
+            case 58:
+                return new DHCPOptionT1(dv, dv.byteOffset + 2, 4, 58);
+            case 59:
+                return new DHCPOptionT2(dv, dv.byteOffset + 2, 4, 59);
+            case 255:
+                return new DHCPOption(dv, 0, 0, 255);
+            default:
+                return new DHCPOption(dv, dv.byteOffset+2, dv.getUint8(1), dv.getUint8(0));
+        }
+    }
 
-	static create(dv: DataView): DHCPOption {
-		switch(dv.getUint8(0)) {
-			case 0:
-				return new DHCPOption(dv, 0, 0, 0);
-			case 12:
-				return new DHCPOptionHostName(dv, dv.byteOffset + 2, dv.getUint8(1), 12);
-			case 50:
-				return new DHCPOptionRequestedAddress(dv, dv.byteOffset + 2, 4, 50);
-			case 51:
-				return new DHCPOptionIPLeaseTime(dv, dv.byteOffset + 2, 4, 51);
-			case 53:
-				return new DHCPOptionMessageType(dv, dv.byteOffset + 2, 1, 53);
-			case 54:
-				return new DHCPOptionServerIdentifier(dv, dv.byteOffset + 2, 4, 54);
-			case 58:
-				return new DHCPOptionT1(dv, dv.byteOffset + 2, 4, 58);
-			case 59:
-				return new DHCPOptionT2(dv, dv.byteOffset + 2, 4, 59);
-			case 255:
-				throw new Error("end");
-			default:
-				return new DHCPOption(dv, dv.byteOffset+2, dv.getUint8(1), dv.getUint8(0));
-
-		}
-
-	}
-
-
-	get value(): string {
-		let ret = "";
-		for (let i = 0; i < this.optionData.byteLength; i++) {
-			ret += this.optionData.getUint8(i).toString(16).padStart(2, "0") + " ";
-		}
-		return ret.trimEnd();
-	}
-
-	get toString(): string {
-		return `${this.code}: ${this.value}`;
-	}
-
-
-
-
-
+    get toString(): string {
+        return `Unknown Option (${this.code})`;
+    }
 }
 
-class DHCPOptionMessageType extends DHCPOption {
-	constructor(dv: DataView, offset: number, length: number, code: number) {
-		super(dv, offset, length, code);
-
-	}
-
-	get value(): string {
-		switch(this.optionData.getUint8(0)) {
-			case 1: 
-				return "DHCPDISCOVER";
-			case 2: 
-				return "DHCPOFFER";
-			case 3: 
-				return "DHCPREQUEST";
-			case 4: 
-				return "DHCPDECLINE";
-			case 5: 
-				return "DHCPACK";
-			case 6: 
-				return "DHCPNAK";
-			case 7: 
-				return "DHCPRELEASE";
-			default:
-				return "";
-		}
-	}
-
-	get toString(): string {
-		return this.value;
-	}
-
-
-}
-
-class DHCPOptionServerIdentifier extends DHCPOption {
-	constructor(dv: DataView, offset: number, length: number, code: number) {
-		super(dv, offset, length, code);
-
-	}
-
-	get value(): string {
-		let ret = "";
-		for(let i = 0; i < 4; i++) {
-			ret += this.optionData.getUint8(i);
-			if(i === 3) {
-				break;
-			}
-			ret += ".";
-		}
-		return ret;
-
-	}
-
-	get toString(): string {
-		return `Server Address: ${this.value}`;
-	}
-}
-
-class DHCPOptionRequestedAddress extends DHCPOption {
-	constructor(dv: DataView, offset: number, length: number, code: number) {
-		super(dv, offset, length, code);
-
-	}
-
-	get value(): string {
-		let ret = "";
-		for(let i = 0; i < 4; i++) {
-			ret += this.optionData.getUint8(i);
-			if(i === 3) {
-				break;
-			}
-			ret += ".";
-		}
-		return ret;
-
-	}
-
-	get toString(): string {
-		return `Requested Address: ${this.value}`;
-	}
-}
-
-class DHCPOptionIPLeaseTime extends DHCPOption {
-	constructor(dv: DataView, offset: number, length: number, code: number) {
-		super(dv, offset, length, code);
-
-	}
-
-	get value(): string {
-		return this.optionData.getUint32(0).toString();
-
-	}
-
-	get toString(): string {
-		return `IP Address Lease Time (s): ${this.value}`;
-	}
-}
-
-class DHCPOptionT1 extends DHCPOption {
-	constructor(dv: DataView, offset: number, length: number, code: number) {
-		super(dv, offset, length, code);
-
-	}
-
-	get value(): string {
-		return this.optionData.getUint32(0).toString();
-
-	}
-
-	get toString(): string {
-		return `Renewal Time (s): ${this.value}`;
-	}
-}
-
-class DHCPOptionT2 extends DHCPOption {
-	constructor(dv: DataView, offset: number, length: number, code: number) {
-		super(dv, offset, length, code);
-
-	}
-
-	get value(): string {
-		return this.optionData.getUint32(0).toString();
-
-	}
-
-	get toString(): string {
-		return `Rebinding Time (s): ${this.value}`;
-	}
-}
-
+// Host Name
 class DHCPOptionHostName extends DHCPOption {
-	constructor(dv: DataView, offset: number, length: number, code: number) {
-		super(dv, offset, length, code);
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
 
-	}
+    get hostName(): string {
+        const encoder = new TextDecoder();
+        return encoder.decode(this.optionData.buffer.slice(this.optionData.byteOffset, this.optionData.byteOffset + this.length));
+    }
 
-	get value(): string {
-		return new TextDecoder(`utf-8`).decode(this.optionData);
-
-	}
-
-	get toString(): string {
-		return `Host Name: ${this.value}`;
-	}
+    get toString(): string {
+        return `Host Name Option (${this.code}): ${this.hostName}`;
+    }
 }
+
+// Requested IP Address
+class DHCPOptionRequestedAddress extends DHCPOption {
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
+
+    get requestedAddress(): string {
+        const address = this.optionData.getUint32(0);
+        return [
+            (address >> 24) & 0xFF,
+            (address >> 16) & 0xFF,
+            (address >> 8) & 0xFF,
+            address & 0xFF
+        ].join('.');
+    }
+
+    get toString(): string {
+        return `Requested Address Option (${this.code}): ${this.requestedAddress}`;
+    }
+}
+
+// IP Lease Time
+class DHCPOptionIPLeaseTime extends DHCPOption {
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
+
+    get leaseTime(): number {
+        return this.optionData.getUint32(0);
+    }
+
+    get toString(): string {
+        return `IP Lease Time Option (${this.code}): ${this.leaseTime} seconds`;
+    }
+}
+
+// Message Type
+class DHCPOptionMessageType extends DHCPOption {
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
+
+    get messageType(): number {
+        return this.optionData.getUint8(0);
+    }
+
+    get messageTypeDescription(): string {
+        switch (this.messageType) {
+            case 1:
+                return 'DHCP Discover';
+            case 2:
+                return 'DHCP Offer';
+            case 3:
+                return 'DHCP Request';
+            case 4:
+                return 'DHCP Decline';
+            case 5:
+                return 'DHCP ACK';
+            case 6:
+                return 'DHCP NAK';
+            case 7:
+                return 'DHCP Release';
+            case 8:
+                return 'DHCP Inform';
+            default:
+                return 'Unknown';
+        }
+    }
+
+    get toString(): string {
+        return `Message Type Option (${this.code}): ${this.messageTypeDescription} (${this.messageType})`;
+    }
+}
+
+// Server Identifier
+class DHCPOptionServerIdentifier extends DHCPOption {
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
+
+    get serverIdentifier(): string {
+        const address = this.optionData.getUint32(0);
+        return [
+            (address >> 24) & 0xFF,
+            (address >> 16) & 0xFF,
+            (address >> 8) & 0xFF,
+            address & 0xFF
+        ].join('.');
+    }
+
+    get toString(): string {
+        return `Server Identifier Option (${this.code}): ${this.serverIdentifier}`;
+    }
+}
+
+// T1 (Renewal Time)
+class DHCPOptionT1 extends DHCPOption {
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
+
+    get t1(): number {
+        return this.optionData.getUint32(0);
+    }
+
+    get toString(): string {
+        return `Renewal Time Option (${this.code}): ${this.t1} seconds`;
+    }
+}
+
+// T2 (Rebinding Time)
+class DHCPOptionT2 extends DHCPOption {
+    constructor(dv: DataView, offset: number, length: number, code: number) {
+        super(dv, offset, length, code);
+    }
+
+    get t2(): number {
+        return this.optionData.getUint32(0);
+    }
+
+    get toString(): string {
+        return `Rebinding Time Option (${this.code}): ${this.t2} seconds`;
+    }
+}
+

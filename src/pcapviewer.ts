@@ -158,13 +158,17 @@ class pcapViewerDocument extends Disposable implements vscode.CustomDocument {
 	/**
 	 * Called by VS Code when the user saves the document to a new location.
 	 */
-	async saveAs(targetResource: vscode.Uri, cancellation: vscode.CancellationToken): Promise<void> {
-		const fileData = await this._delegate.getFileData();
-		if (cancellation.isCancellationRequested) {
-			return;
-		}
-		await vscode.workspace.fs.writeFile(targetResource, fileData);
-	}
+	async saveAs(targetResource: vscode.Uri, cancellation: vscode.CancellationToken): Promise<void> { 
+		if (cancellation.isCancellationRequested || !targetResource.path.toLowerCase().endsWith(".txt")) { 
+			return; 
+		} 
+		let textData:string = ""; 
+		this._sections.forEach(s => { 
+			textData += s.toString + "\n"; 
+		}); 
+		const encoder = new TextEncoder(); 
+		await vscode.workspace.fs.writeFile(targetResource, encoder.encode(textData.trimEnd())); 
+	} 
 
 	/**
 	 * Called by VS Code when the user calls `revert` on a document.
