@@ -8,7 +8,7 @@ export class PacketViewProvider implements vscode.WebviewViewProvider {
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
-  public refresh(section: Section) {
+  public refresh(section?: Section) {
     if (this._view === undefined) {
       return;
     }
@@ -140,6 +140,8 @@ export class PacketViewProvider implements vscode.WebviewViewProvider {
 
       strHex = section.getHex;
       strASCII = section.getASCII;
+    } else {
+      strProperties = "Select a packet in a pcap or pcapng file to display details.";
     }
 
     return `<!DOCTYPE html>

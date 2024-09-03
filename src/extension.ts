@@ -16,15 +16,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(PacketViewProvider.viewType, provider));
 
-	context.subscriptions.push(
-		vscode.commands.registerCommand('packetDetails.addColor', () => {
-			provider.addColor();
-		}));
-
-	context.subscriptions.push(
-		vscode.commands.registerCommand('packetDetails.clearColors', () => {
-			provider.clearColors();
-		}));
 }
 
 // This method is called when your extension is deactivated

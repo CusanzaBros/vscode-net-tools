@@ -1,5 +1,5 @@
 import { EthernetPacket } from "../packet/ether";
-
+import { GenericPacket } from "../packet/genericPacket";
 
 export class Section {
 	startoffset: number = 0;
@@ -71,6 +71,16 @@ export class HeaderSection extends Section {
 	}
 }
 
+
+
+//#region PCAP
+
+
+
+
+
+
+
 export class PCAPPacketRecord extends Section {
 	timestamp1: Date;
 	timestamp2: number;
@@ -95,7 +105,7 @@ export class PCAPPacketRecord extends Section {
 	}
 	
 	get toString() {
-		return `${this.timestamp1.getFullYear()}-${this.timestamp1.getMonth()}-${this.timestamp1.getDay()} ${this.timestamp1.getHours()}:${this.timestamp1.getMinutes()}:${this.timestamp1.getSeconds()}.${this.timestamp2.toString()} Length ${this.capturedlength.toString()}/${this.originallength.toString()}: ${this.packet.toString}`;
+		return `${this.timestamp1.getFullYear()}-${(this.timestamp1.getMonth()+1).toString().padStart(2, "0")}-${this.timestamp1.getDate().toString().padStart(2, "0")} ${this.timestamp1.getHours().toString().padStart(2, "0")}:${this.timestamp1.getMinutes().toString().padStart(2, "0")}:${this.timestamp1.getSeconds().toString().padStart(2, "0")}.${this.timestamp2.toString().padStart(9, "0")}: ${this.packet.toString}`;
 	}
 
 	get getProperties(): Array<any> {
@@ -155,6 +165,15 @@ export class PCAPHeaderRecord extends HeaderSection {
 	}
 }
 
+
+
+//#region PCAPNG
+
+
+
+
+
+
 export class PCAPNGSection extends Section {
 
 
@@ -164,7 +183,7 @@ export class PCAPNGSection extends Section {
 			console.log("byte length less than offset");
 		}
 		let dv = new DataView(bytes.buffer, offset, bytes.byteLength - offset);
-		const le = header === undefined ? true: header.le;
+		const le: boolean = header === undefined ? (dv.getUint32(8, true) === 0x1A2B3C4D): header.le;
 		const blockType = dv.getUint32(0, le);
 		const blockLength = dv.getUint32(4, le);
 		dv = new DataView(bytes.buffer, offset, blockLength);
@@ -188,8 +207,10 @@ export class PCAPNGSection extends Section {
 				}
 				return new PCAPNGEnhancedPacketBlock(dv, header);
 			default:
-				console.log("blocktype: " + blockType);
-				throw new Error("unkown blocktype");
+				if(header === undefined) {
+					throw new Error("header required");
+				}
+				return new PCAPNGGenericBlock(dv, header);
 		}
 	}
 	
@@ -199,12 +220,13 @@ export class PCAPNGInterfaceDescriptionBlock extends Section {
 	blockType: number;
 	blockLength: number;
 	le: boolean;
+	interfaceID: number;
 
 	constructor(dv: DataView, header: PCAPNGSectionHeaderBlock) {
 		super(dv);
 		this.blockType = this._packet.getUint32(0, header.le);
 		this.le = header.le;
-
+		this.interfaceID = header.interfaceCount++;
 		this.blockLength = this._packet.getUint32(4, header.le);
 		
 	}
@@ -239,24 +261,39 @@ export class PCAPNGInterfaceDescriptionBlock extends Section {
 	}
 
 	get toString() {
+		let name = "Unnamed";
+		const decoder = new TextDecoder('utf-8');
+		if(this.options !== undefined) {
+			for(let i = 0; i < this.options?.length; i++) {
+				if(this.options[i].code === 2) {
+					name = `${decoder.decode(this.options[i].value)}`;
+				}
+			}
+		}
+		return `Interface ${this.interfaceID}: ${name}`;
+	}
+
+	get getProperties(): Array<any> {
+		const arr: Array<any> = [
+			"*Interface Description Block"
+		];
 		let optionsText = "";
 		const decoder = new TextDecoder('utf-8');
 		if(this.options !== undefined) {
 			for(let i = 0; i < this.options?.length; i++) {
 				switch(this.options[i].code) {
 					case 1:
-						optionsText += `opt_comment ${decoder.decode(this.options[i].value)}`;
+						arr.push(`Comment: ${decoder.decode(this.options[i].value)}`);
 						break;
 					case 2:
-						optionsText += `opt_name ${decoder.decode(this.options[i].value)}`;
+						arr.push(`Name: ${decoder.decode(this.options[i].value)}`);
 						break;
-
 					default:
-						optionsText += `opt_unknown ${this.options[i].code}`;
+						arr.push(`Option ${this.options[i].code}: Unknown`);
 				}
 			}
 		}
-		return `linktype: ${this.linkType}${this.options !== undefined && this.options.length ? ", options: " + optionsText : ""}`;
+		return [arr];
 	}
 }
 
@@ -282,6 +319,40 @@ class PCAPNGOption {
 	}
 
 
+}
+
+export class PCAPNGGenericBlock extends Section {
+	data: GenericPacket;
+	le: boolean;
+
+	constructor(dv: DataView, header: PCAPNGSectionHeaderBlock) {
+		super(dv);
+		this.le = header.le;
+	
+		this.data = new GenericPacket(new DataView(dv.buffer, dv.byteOffset + 28, this.blockLength - 12));
+		
+	}
+
+	get blockType() {
+		return this._packet.getUint32(0, this.le);
+	}
+
+	get blockLength() {
+		return this._packet.getUint32(4, this.le);
+	}
+	
+	get toString() {
+		return `Block Type ${this.blockType} (${this.blockLength} bytes): ${this.data.toString}`;
+	}
+
+	get getProperties(): Array<any> {
+		const arr: Array<any> = [
+			`Block Type ${this.blockType}`,
+			`Block Length: ${this.blockLength}`
+		];
+
+		return [arr, this.data.getProperties];
+	}
 }
 
 export class PCAPNGEnhancedPacketBlock extends Section {
@@ -349,6 +420,25 @@ export class PCAPNGEnhancedPacketBlock extends Section {
 		return options;
 	}
 	
+	get timestamp(): string {
+		const upper64 = BigInt(this.tsHigh) << 32n;
+		const lower64 = BigInt(this.tsLow);
+		
+
+
+
+
+
+
+		let timeVal: number = Number(upper64 | lower64);
+		let timeValSec: number = timeVal/1000;
+		let ms = timeVal%1000000;
+		let date = new Date(timeValSec);
+		return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")} ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}:${date.getSeconds().toString().padStart(2, "0")}.${(ms*1000).toString().padStart(9, "0")}`;
+	}
+
+
+
 	get toString() {
 		let optionsText = "";
 		const decoder = new TextDecoder('utf-8');
@@ -376,7 +466,7 @@ export class PCAPNGEnhancedPacketBlock extends Section {
 				}
 			}
 		}
-		return `${this.data.toString} ${this.options !== undefined && this.options.length ? ", options: " + optionsText : ""}`;
+		return `${this.timestamp}: ${this.data.toString}`;
 	}
 
 	get getProperties(): Array<any> {
@@ -482,6 +572,7 @@ export class PCAPNGSectionHeaderBlock extends HeaderSection {
 	blockType: number;
 	blockLength: number;
 	le: boolean;
+	public interfaceCount: number = 0;
 
 	constructor(dv: DataView) {
 		super(dv);
@@ -495,29 +586,7 @@ export class PCAPNGSectionHeaderBlock extends HeaderSection {
 	}
 
 	get toString() {
-		let optionsText = "";
-		const decoder = new TextDecoder('utf-8');
-		if(this.options !== undefined) {
-			for(let i = 0; i < this.options?.length; i++) {
-				switch(this.options[i].code) {
-					case 1:
-						optionsText += `opt_comment ${decoder.decode(this.options[i].value)} `;
-						break;
-					case 2:
-						optionsText += `shb_hardware ${decoder.decode(this.options[i].value)} `;
-						break;
-					case 3:
-						optionsText += `shb_os ${decoder.decode(this.options[i].value)} `;
-						break;
-					case 4:
-						optionsText += `shb_userappl ${decoder.decode(this.options[i].value)} `;
-						break;
-					default:
-						optionsText += `opt_unknown ${this.options[i].code} `;
-				}
-			}
-		}
-		return `${optionsText}`;
+		return `Section Header Block`;
 	}
 	
 	get options() {
@@ -541,6 +610,35 @@ export class PCAPNGSectionHeaderBlock extends HeaderSection {
 		return options;
 	}
 
+
+	get getProperties(): Array<any> {
+		const arr: Array<any> = [
+			"*Section Header Block"
+		];
+		let optionsText = "";
+		const decoder = new TextDecoder('utf-8');
+		if(this.options !== undefined) {
+			for(let i = 0; i < this.options?.length; i++) {
+				switch(this.options[i].code) {
+					case 1:
+						arr.push(`Comment: ${decoder.decode(this.options[i].value)}`);
+						break;
+					case 2:
+						arr.push(`Hardware: ${decoder.decode(this.options[i].value)}`);
+						break;
+					case 3:
+						arr.push(`OS: ${decoder.decode(this.options[i].value)}`);
+						break;
+					case 4:
+						arr.push(`User Application: ${decoder.decode(this.options[i].value)}`);
+						break;
+					default:
+						arr.push(`Option ${this.options[i].code}: Unknown`);
+				}
+			}
+		}
+		return [arr];
+	}
 	
 
 }

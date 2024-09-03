@@ -208,7 +208,7 @@ class ICMPv6NeighborSolicitation extends ICMPv6Info {
     }   
 
     get options() {
-        let ret = "Source Link-layer Address : ";
+        let ret = "Source Link-layer Address: ";
 		for(let i = 0; i < 6; i++) {
 			ret += this.packet.getUint8(26 + i).toString(16).padStart(2, "0");
 			if(i === 5) {
@@ -233,7 +233,7 @@ class ICMPv6NeighborSolicitation extends ICMPv6Info {
 		arr.push(`Checksum: (0x${this.checksum.toString(16)})`);
 		arr.push(`Reserved: 00000000`);
         arr.push(`Target Address: (${this.targetAddress.correctForm()})`);
-        arr.push(`ICMPv6 Option: ${this.options})`);
+        arr.push(`ICMPv6 Option: ${this.options}`);
 		return arr;
 	}
 }
@@ -311,7 +311,7 @@ class ICMPv6NeighborAdvertisement extends ICMPv6Info {
         arr.push(`Flags: ${this.getFlags}`);
 		arr.push(`Reserved: 00000000`);
         arr.push(`Target Address: (${this.targetAddress.correctForm()})`);
-        arr.push(`ICMPv6 Option: ${this.options})`);
+        arr.push(`ICMPv6 Option: ${this.options}`);
 		return arr;
 	}
 }

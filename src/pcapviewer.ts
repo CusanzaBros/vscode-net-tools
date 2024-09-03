@@ -3,33 +3,17 @@ import { Disposable, disposeAll } from './dispose';
 import { Section, HeaderSection } from "./parsers/file/section";
 import { PacketViewProvider } from './packetdetails';
 
-
-/**
- * Define the type of edits used in paw draw files.
- */
-interface pcapViewerEdit {
-	readonly color: string;
-	readonly stroke: ReadonlyArray<[number, number]>;
-}
-
-interface pcapViewerDocumentDelegate {
-	getFileData(): Promise<Uint8Array>;
-}
-
 /**
  * Define the document (the data model) used for paw draw files.
  */
 class pcapViewerDocument extends Disposable implements vscode.CustomDocument {
 
 	static async create(
-		uri: vscode.Uri,
-		backupId: string | undefined,
-		delegate: pcapViewerDocumentDelegate,
+		uri: vscode.Uri
 	): Promise<pcapViewerDocument | PromiseLike<pcapViewerDocument>> {
-		// If we have a backup, read that. Otherwise read the resource from the workspace
-		const dataFile = typeof backupId === 'string' ? vscode.Uri.parse(backupId) : uri;
+		const dataFile = uri;
 		const fileData = await pcapViewerDocument.readFile(dataFile);
-		return new pcapViewerDocument(uri, fileData, delegate);
+		return new pcapViewerDocument(uri, fileData);
 	}
 
 	private static async readFile(uri: vscode.Uri): Promise<Uint8Array> {
@@ -42,21 +26,17 @@ class pcapViewerDocument extends Disposable implements vscode.CustomDocument {
 	private readonly _uri: vscode.Uri;
 
 	private _documentData: Uint8Array;
-	private _edits: Array<pcapViewerEdit> = [];
-	private _savedEdits: Array<pcapViewerEdit> = [];
 	private _sections: Array<Section> = [];
+	public selectedSection: number = -1;
 
-	private readonly _delegate: pcapViewerDocumentDelegate;
 
 	private constructor(
 		uri: vscode.Uri,
 		initialContent: Uint8Array,
-		delegate: pcapViewerDocumentDelegate
 	) {
 		super();
 		this._uri = uri;
 		this._documentData = initialContent;
-		this._delegate = delegate;
 
 		const bytes = this._documentData;
 		const header = Section.create(bytes);
@@ -91,15 +71,6 @@ class pcapViewerDocument extends Disposable implements vscode.CustomDocument {
 	 */
 	public readonly onDidDispose = this._onDidDispose.event;
 
-	private readonly _onDidChangeDocument = this._register(new vscode.EventEmitter<{
-		readonly content?: Uint8Array;
-		readonly edits: readonly pcapViewerEdit[];
-	}>());
-	/**
-	 * Fired to notify webviews that the document has changed.
-	 */
-	public readonly onDidChangeContent = this._onDidChangeDocument.event;
-
 	private readonly _onDidChange = this._register(new vscode.EventEmitter<{
 		readonly label: string,
 		undo(): void,
@@ -123,36 +94,10 @@ class pcapViewerDocument extends Disposable implements vscode.CustomDocument {
 	}
 
 	/**
-	 * Called when the user edits the document in a webview.
-	 *
-	 * This fires an event to notify VS Code that the document has been edited.
-	 */
-	makeEdit(edit: pcapViewerEdit) {
-		this._edits.push(edit);
-
-		this._onDidChange.fire({
-			label: 'Stroke',
-			undo: async () => {
-				this._edits.pop();
-				this._onDidChangeDocument.fire({
-					edits: this._edits,
-				});
-			},
-			redo: async () => {
-				this._edits.push(edit);
-				this._onDidChangeDocument.fire({
-					edits: this._edits,
-				});
-			}
-		});
-	}
-
-	/**
 	 * Called by VS Code when the user saves the document.
 	 */
 	async save(cancellation: vscode.CancellationToken): Promise<void> {
 		await this.saveAs(this.uri, cancellation);
-		this._savedEdits = Array.from(this._edits);
 	}
 
 	/**
@@ -174,13 +119,7 @@ class pcapViewerDocument extends Disposable implements vscode.CustomDocument {
 	 * Called by VS Code when the user calls `revert` on a document.
 	 */
 	async revert(_cancellation: vscode.CancellationToken): Promise<void> {
-		const diskContent = await pcapViewerDocument.readFile(this.uri);
-		this._documentData = diskContent;
-		this._edits = this._savedEdits;
-		this._onDidChangeDocument.fire({
-			content: diskContent,
-			edits: this._edits,
-		});
+		return;
 	}
 
 	/**
@@ -219,7 +158,7 @@ class pcapViewerDocument extends Disposable implements vscode.CustomDocument {
  * - Implementing save, undo, redo, and revert.
  * - Backing up a custom editor.
  */
-export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewerDocument> {
+export class pcapViewerProvider implements vscode.CustomReadonlyEditorProvider<pcapViewerDocument> {
 
 	private static newpcapViewerFileId = 1;
 
@@ -271,17 +210,7 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 		openContext: { backupId?: string },
 		_token: vscode.CancellationToken
 	): Promise<pcapViewerDocument> {
-		const document: pcapViewerDocument = await pcapViewerDocument.create(uri, openContext.backupId, {
-			getFileData: async () => {
-				const webviewsForDocument = Array.from(this.webviews.get(document.uri));
-				if (!webviewsForDocument.length) {
-					throw new Error('Could not find webview to save for');
-				}
-				const panel = webviewsForDocument[0];
-				const response = await this.postMessageWithResponse<number[]>(panel, 'getFileData', {});
-				return new Uint8Array(response);
-			}
-		});
+		const document: pcapViewerDocument = await pcapViewerDocument.create(uri);
 
 		const listeners: vscode.Disposable[] = [];
 
@@ -291,16 +220,6 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 				document,
 				...e,
 			});
-		}));
-
-		listeners.push(document.onDidChangeContent(e => {
-			// Update all webviews when the document changes
-			for (const webviewPanel of this.webviews.get(document.uri)) {
-				this.postMessage(webviewPanel, 'update', {
-					edits: e.edits,
-					content: e.content,
-				});
-			}
 		}));
 
 		document.onDidDispose(() => disposeAll(listeners));
@@ -327,11 +246,23 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 			switch (data.type) {
 				case 'packetSelected':
 					{
+						document.selectedSection = data.value;
 						this._details.refresh(document.sections[data.value]);
 						break;
 					}
 			}
 		
+		});
+
+		webviewPanel.onDidChangeViewState(data => {
+
+			const panel = data.webviewPanel;
+			if(panel.visible && document.selectedSection !== -1) {
+				this._details.refresh(document.sections[document.selectedSection]);
+
+			} else {
+				this._details.refresh(undefined);
+			}
 		});
 		
 	}
@@ -434,9 +365,6 @@ export class pcapViewerProvider implements vscode.CustomEditorProvider<pcapViewe
 
 	private onMessage(document: pcapViewerDocument, message: any) {
 		switch (message.type) {
-			case 'stroke':
-				document.makeEdit(message as pcapViewerEdit);
-				return;
 
 			case 'response':
 				{

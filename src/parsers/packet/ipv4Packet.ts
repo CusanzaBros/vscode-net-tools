@@ -118,7 +118,7 @@ export class IPv4Packet extends GenericPacket {
     }
 
 	get toString() {
-		return `IPv${this.version}, ${this.ihl}, ${this.typeOfService}, ${this.totalLength}, ${this.identification}, ${this.flags}, ${this.fragmentOffset}, ${this.timeToLive}, 0x${this.protocol.toString(16).padStart(2, "0")}, ${this.headerChecksum}, ${this.srcAddress} > ${this.destAddress}, ${this.innerPacket.toString} `;
+		return `IPv${this.version}, ${this.srcAddress} > ${this.destAddress}, ${this.innerPacket.toString} `;
 	}
 
 	get getProperties(): Array<any> {

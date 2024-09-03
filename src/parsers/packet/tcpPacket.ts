@@ -134,7 +134,7 @@ export class TCPPacket extends GenericPacket {
 	}
 
 	get toString() {
-		return `TCP ${this.srcPort} > ${this.destPort}, ${this.seqNum}, ${this.ackNum}, ${this.dataOffset}, ${this.getFlags}, ${this.window}, ${this.checksum}, ${this.urgentPointer}${this.innerPacket.packet.byteLength > 0 ? "," : ""} ${this.innerPacket.toString}`;
+		return `TCP ${this.srcPort} > ${this.destPort}${this.innerPacket.packet.byteLength > 0 ? ", " : ""} ${this.innerPacket.toString}`;
 	}
 
 	get getProperties() {

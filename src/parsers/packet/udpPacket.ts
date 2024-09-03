@@ -47,7 +47,7 @@ export class UDPPacket extends GenericPacket {
 	
 
 	get toString() {
-		return `UDP ${this.srcPort} > ${this.destPort}, ${this.length}, ${this.checksum} ${this.innerPacket.toString}`;
+		return `UDP ${this.srcPort} > ${this.destPort}, ${this.innerPacket.toString}`;
 	}
 
 	get getProperties() {

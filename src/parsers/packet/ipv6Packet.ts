@@ -116,8 +116,7 @@ export class IPv6Packet extends GenericPacket {
 		arr.push(`Source Address: (${this.srcAddress.correctForm()})`);
 		arr.push(`Destination Address: (${this.destAddress.correctForm()})`);
 
-		arr.push(this.innerPacket.getProperties);
-		return arr;
+		return [arr, this.innerPacket.getProperties];
 	}
 	
 }
