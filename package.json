@@ -45,29 +45,7 @@
 					}
 				]
 			}
-		],
-    "commands": [
-			{
-				"command": "packetDetails.addColor",
-				"category": "Calico Colors",
-				"title": "Add Color"
-			},
-			{
-				"command": "packetDetails.clearColors",
-				"category": "Calico Colors",
-				"title": "Clear Colors",
-				"icon": "$(clear-all)"
-			}
-		],
-		"menus": {
-			"view/title": [
-				{
-					"command": "packetDetails.clearColors",
-					"group": "navigation",
-					"when": "view == packetDetails.detailsView"
-				}
-			]
-		}
+		]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
