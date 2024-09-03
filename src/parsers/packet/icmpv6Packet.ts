@@ -85,7 +85,7 @@ class ICMPv6Error extends ICMPv6Message {
     }
 
     get toString() {
-        return `Type: ${this.type} Code: ${this.code} Invoking Packet: ${this.invokingPacket}`;
+        return `Unknown Error Message (${this.type})`;
     }
     
 }
@@ -112,8 +112,16 @@ class ICMPv6Info extends ICMPv6Message {
     }
 
     get toString() {
-        return `Type: ${this.type} Code: ${this.code}`;
+        return `Unknown Info Message (${this.type})`;
     }
+
+    get getProperties(): Array<any> {
+		const arr: Array<any> = [];
+		arr.push("Internet Control Message Protocol v6");
+		arr.push(`Type: Neighbor Solicitation (${this.type})`);
+		arr.push(`Code: (${this.code})`);
+		return arr;
+	}
 }
 
 class ICMPv6EchoRequest extends ICMPv6Info {
@@ -207,8 +215,8 @@ class ICMPv6NeighborSolicitation extends ICMPv6Info {
 		return Address6.fromByteArray(na);
     }   
 
-    get options() {
-        let ret = "Source Link-layer Address: ";
+    get option() {
+        let ret = "";
 		for(let i = 0; i < 6; i++) {
 			ret += this.packet.getUint8(26 + i).toString(16).padStart(2, "0");
 			if(i === 5) {
@@ -222,7 +230,7 @@ class ICMPv6NeighborSolicitation extends ICMPv6Info {
 
 
     get toString() {
-        return `Neighbor Solicitation, Target Address: ${this.targetAddress.correctForm()}${this.packet.byteLength > 24 ? " Options: " + this.options: ""}`;
+        return `Neighbor Solicitation for ${this.targetAddress.correctForm()}${this.option ? ` from ${this.option}` : ""}`;
     }
 
     get getProperties(): Array<any> {
@@ -233,7 +241,7 @@ class ICMPv6NeighborSolicitation extends ICMPv6Info {
 		arr.push(`Checksum: (0x${this.checksum.toString(16)})`);
 		arr.push(`Reserved: 00000000`);
         arr.push(`Target Address: (${this.targetAddress.correctForm()})`);
-        arr.push(`ICMPv6 Option: ${this.options}`);
+        arr.push(`ICMPv6 Option: Source link-layer address: ${this.option}`);
 		return arr;
 	}
 }
@@ -284,8 +292,11 @@ class ICMPv6NeighborAdvertisement extends ICMPv6Info {
 		return Address6.fromByteArray(na);
     }   
 
-    get options() {
-        let ret = "Target Link-layer Address: ";
+    get option() {
+        if(this.packet.byteLength <= 24) {
+            return undefined;
+        }
+        let ret = "";
 		for(let i = 0; i < 6; i++) {
 			ret += this.packet.getUint8(26 + i).toString(16).padStart(2, "0");
 			if(i === 5) {
@@ -299,7 +310,23 @@ class ICMPv6NeighborAdvertisement extends ICMPv6Info {
 
 
     get toString() {
-        return `Neighbor Advertisement, Target Address: ${this.targetAddress.correctForm()}, Flags: ${this.getFlags}${this.packet.byteLength > 24 ? " " + this.options: ""}`;
+        let flags: string = "";
+		if(this.r) {
+			flags += "res";
+		}
+        if(this.r && this.s) {
+            flags += ", ";
+        }
+        if(this.s) {
+			flags += "sol";
+		}
+        if(this.o && (this.r || this.s)) {
+            flags += ", ";
+        }
+        if(this.o) {
+			flags += "ovr";
+		}
+        return `Neighbor Advertisement ${this.targetAddress.correctForm()} (${flags.trimEnd()})${this.option ? ` is at ${this.option}` : ""}`;
     }
 
     get getProperties(): Array<any> {
@@ -311,7 +338,7 @@ class ICMPv6NeighborAdvertisement extends ICMPv6Info {
         arr.push(`Flags: ${this.getFlags}`);
 		arr.push(`Reserved: 00000000`);
         arr.push(`Target Address: (${this.targetAddress.correctForm()})`);
-        arr.push(`ICMPv6 Option: ${this.options}`);
+        arr.push(`ICMPv6 Option: Target link-layer address: ${this.option}`);
 		return arr;
 	}
 }
@@ -345,7 +372,7 @@ class ICMPv6DestinationUnreachable extends ICMPv6Error {
     }
 
     get toString() {
-        return `Destination Unreachable Error: ${this.codeMessage}, Invoking Packet: ${this.invokingPacket}`;
+        return `Destination Unreachable Error: ${this.codeMessage}`;
     }
 
     get getProperties(): Array<any> {
@@ -371,7 +398,7 @@ class ICMPv6PacketTooBig extends ICMPv6Error {
     }
 
     get toString() {
-        return `Packet Too Big Error, MTU: ${this.mtu}, Invoking Packet: ${this.invokingPacket}`;
+        return `Packet Too Big Error`;
     }
 
     get getProperties(): Array<any> {
@@ -405,7 +432,7 @@ class ICMPv6TimeExceeded extends ICMPv6Error {
     }
 
     get toString() {
-        return `Time Exceeded Error: ${this.codeMessage}, Invoking Packet: ${this.invokingPacket}`;
+        return `Time Exceeded Error: ${this.codeMessage}`;
     }
 
     get getProperties(): Array<any> {
@@ -444,7 +471,7 @@ class ICMPv6ParameterProblem extends ICMPv6Error {
     }
 
     get toString() {
-        return `Parameter Problem Error: ${this.codeMessage}, Pointer: ${this.pointer}, Invoking Packet: ${this.invokingPacket}`;
+        return `Parameter Problem Error: ${this.codeMessage}`;
     }
 
     get getProperties(): Array<any> {

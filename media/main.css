@@ -57,7 +57,7 @@ body {
 }
 
 .tree span:hover {
-  outline: 1px dotted #fff;
+  color: var(--vscode-textLink-activeForeground);
 }
 
 .tree summary {

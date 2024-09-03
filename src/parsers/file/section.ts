@@ -89,8 +89,8 @@ export class PCAPPacketRecord extends Section {
 	packet: EthernetPacket;
 
 	constructor(bytes: Uint8Array, offset: number, header: PCAPHeaderRecord) {
-		
-		super(new DataView(bytes.buffer, offset, ));
+		const dv = new DataView(bytes.buffer, offset, 16);
+		super(new DataView(bytes.buffer, offset, dv.getUint32(8, header.getle) + 16));
 		this.startoffset = offset;
 		header.isMS;
 		this.timestamp1 = new Date(this._packet.getUint32(0, header.getle)*1000);
@@ -110,6 +110,20 @@ export class PCAPPacketRecord extends Section {
 
 	get getProperties(): Array<any> {
 		return [this.packet.getProperties];
+	}
+
+	get getHex(): string {
+		let ret = "";
+		for (let i = 0; i < this.packet.packet.byteLength; i++) {
+			ret += this.packet.packet.getUint8(i).toString(16).padStart(2, "0") + " ";
+		}
+		return ret.trimEnd();
+	}
+
+	get getASCII(): string {
+		const decoder = new TextDecoder('ascii');
+		return decoder.decode(this.packet.packet).replaceAll(/[\x00\W]/g, ".");
+
 	}
 }
 
@@ -476,6 +490,20 @@ export class PCAPNGEnhancedPacketBlock extends Section {
 		];
 
 		return [arr, this.data.getProperties];
+	}
+
+	get getHex(): string {
+		let ret = "";
+		for (let i = 0; i < this.data.packet.byteLength; i++) {
+			ret += this.data.packet.getUint8(i).toString(16).padStart(2, "0") + " ";
+		}
+		return ret.trimEnd();
+	}
+
+	get getASCII(): string {
+		const decoder = new TextDecoder('ascii');
+		return decoder.decode(this.data.packet).replaceAll(/[\x00\W]/g, ".");
+
 	}
 }
 

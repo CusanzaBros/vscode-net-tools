@@ -9,9 +9,9 @@
 body {
 	padding: 0 var(--container-paddding);
 	color: var(--vscode-foreground);
-	font-size: var(--vscode-font-size);
-	font-weight: var(--vscode-font-weight);
-	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-editor-font-size);
+	font-weight: var(--vscode-editor-font-weight);
+	font-family: var(--vscode-editor-font-family);
 	background-color: var(--vscode-editor-background);
 }
 
@@ -88,4 +88,53 @@ textarea {
 input::placeholder,
 textarea::placeholder {
 	color: var(--vscode-input-placeholderForeground);
+}
+
+.line-numbers {
+	text-align: right;
+}
+
+.line-numbers span {
+	counter-increment: linenumber;
+}
+
+.line-numbers span::before {
+	content: counter(linenumber);
+	display: block;
+	color: var(--vscode-editorLineNumber-foreground);
+}
+
+.editor {
+	display: inline-flex;
+	gap: 10px;
+	line-height: 1.35em;
+	overflow-x: hidden;
+	overflow-y: auto;
+	
+}
+
+.text-output {
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+.text-output span {
+	display: block;
+	border: none;
+	font-family: var(--vscode-editor-font-family);
+	color: var(--vscode-editor-foreground);
+	background-color: var(--vscode-editor-background);
+	white-space: nowrap;
+}
+
+.packet {
+	outline: none;
+}
+
+.packet:hover {
+	color: var(--vscode-textLink-activeForeground);
+}
+
+.packet.active {
+	background-color: var(--vscode-editor-selectionBackground);
 }

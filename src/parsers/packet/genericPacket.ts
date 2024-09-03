@@ -21,9 +21,13 @@ export class GenericPacket {
 	}
 
 	get getProperties(): Array<any> {
-		return [
-			"Unparsed Data",
-			`Data: ${this.toString}`
-		];
+		if(this.packet.byteLength === 0) {
+			return [];
+		} else {
+			return [
+				"Unparsed Data",
+				`Data: ${this.toString}`
+			];
+		}
 	}
 }

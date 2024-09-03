@@ -295,7 +295,7 @@ export class pcapViewerProvider implements vscode.CustomReadonlyEditorProvider<p
 		// Local path to script and css for the webview
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'main.js'));
 		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(
-			this._context.extensionUri, 'src', 'vscode.css'));
+			this._context.extensionUri, 'media', 'vscode.css'));
 
 		let lineOutput: string = "";
 		let lineNumberOutput: string = "";

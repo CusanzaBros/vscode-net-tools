@@ -134,7 +134,7 @@ export class ARPPacket extends GenericPacket {
 	}
 
 	get toString() {
-		return `ARP 0x${this.htype.toString(16).padStart(4, "0")}, 0x${this.ptype.toString(16).padStart(4, "0")}, 0x${this.opcode.toString(16).padStart(4, "0")}, ${this.hardwareAddressSender} > ${this.hardwareAddressTarget}, ${this.protocolAddressSender} > ${this.protocolAddressTarget}`;
+		return `ARP, ${this.opcode === 1 ? `Who has ${this.protocolAddressTarget}? Tell ${this.protocolAddressSender}` : `${this.protocolAddressTarget} is at ${this.hardwareAddressSender}`}`;
 	}
 
 	get getProperties(): Array<any> {

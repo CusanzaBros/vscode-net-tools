@@ -9,10 +9,16 @@
 
     /** @type {Array<{ value: string }>} */
     let colors = oldState.colors;
+    let selected = null;
 
     document.querySelectorAll('.packet').forEach((element) => {
         element.addEventListener('click', (e) => {
             vscode.postMessage({ type: 'packetSelected', value: e.target.id});
+            if(selected !== null) {
+                selected.classList.toggle(`active`);
+            }
+            e.target.classList.toggle(`active`);
+            selected = e.target;
         });
     });
 
