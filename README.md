@@ -23,7 +23,7 @@ The goal of this extension is to provide a set useful tools for anyone that need
 
 * Maximum compatibility with PCAP and PCAPNG files, including those output by pktmon and wireshark, with graceful handling of unknown protocols.
 
-![User opens a pcapng file named pktmon-dhcp.pcapng using the extension. The user then navigates the menus](demo.gif)
+![User opens a pcapng file named pktmon-dhcp.pcapng using the extension. The user then navigates the menus](https://github.com/CusanzaBros/vscode-net-tools/blob/main/demo.gif?raw=true)
 
 
 ## Requirements
