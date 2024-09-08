@@ -2,6 +2,7 @@
 
 The goal of this extension is to provide a set useful tools for anyone that needs to analyze the network.
 
+
 ## Features
 
 * PCAP and PCAPNG file viewer with parsers for the following protocols:
@@ -21,6 +22,8 @@ The goal of this extension is to provide a set useful tools for anyone that need
 * Ability to save as text to make sharing content easier.
 
 * Maximum compatibility with PCAP and PCAPNG files, including those output by pktmon and wireshark, with graceful handling of unknown protocols.
+
+![User opens a pcapng file named pktmon-dhcp.pcapng using the extension. The user then navigates the menus](demo.gif)
 
 
 ## Requirements
