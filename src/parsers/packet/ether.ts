@@ -2,48 +2,41 @@ import { ARPPacket } from "./arpPacket";
 import { GenericPacket } from "./genericPacket";
 import { IPv4Packet } from "./ipv4Packet";
 import { IPv6Packet } from "./ipv6Packet";
+import { vlanPacket } from "./vlanPacket";
 
-export class EthernetPacket {
-	packet: DataView;
+export class EthernetPacket extends GenericPacket {
 	innerPacket: GenericPacket;
 
-	constructor(packet: DataView) {
-		this.packet = packet;
-		switch (this.proto) {
+	static processPayload(proto: number, payload: DataView): GenericPacket {
+		switch (proto) {
 			case 0x800:
-				if(this.packet.getUint8(14) >> 4 === 4) {
-					this.innerPacket = new IPv4Packet(
-						new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
-					);
-				} else if(this.packet.getUint8(0) >> 4 === 6) {
-					this.innerPacket = new IPv6Packet(
-						new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
-					);
+				if(payload.getUint8(0) >> 4 === 4) {
+					return new IPv4Packet(payload);
+				} else if(payload.getUint8(0) >> 4 === 6) {
+					return new IPv6Packet(payload);
 				} else {
-					this.innerPacket = new GenericPacket(
-						new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
-					);
+					return new GenericPacket(payload);
 				}
 				break;
-
 			case 0x806:
-				this.innerPacket = new ARPPacket(
-					new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
-				);
+				return new ARPPacket(payload);
+				break;
+			case 0x8100:
+				return new vlanPacket(payload);
 				break;
 			case 0x86dd:
-				this.innerPacket = new IPv6Packet(
-					new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
-				);
+				return new IPv6Packet(payload);
 				break;
 			default:
-				this.innerPacket = new GenericPacket(
-					new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14),
-				);
+				return new GenericPacket(payload);
 		}
-		
 	}
 
+	constructor(packet: DataView) {
+		super(packet);
+		this.innerPacket = EthernetPacket.processPayload(this.proto, new DataView(packet.buffer, packet.byteOffset + 14, packet.byteLength - 14));
+	}
+	
 	get dstMAC() {
 		//00:11:22:33:44:55
 		let ret = "";
@@ -78,14 +71,14 @@ export class EthernetPacket {
 
 	get getProperties(): Array<any> {
 		const arr: Array<any> = [];
-		arr.push("*Ethernet II");
+		arr.push(`*Ethernet II, Src: ${this.srcMAC}, Dst: ${this.dstMAC}`);
 		arr.push(`Source Address: ${this.srcMAC}`);
 		arr.push(`Destination Address: ${this.dstMAC}`);
 		switch (this.proto) {
 			case 0x800:
 				if(this.packet.getUint8(14) >> 4 === 4) {
 					arr.push(`Type: IPv4 (0x${this.proto.toString(16)})`);
-				} else if(this.packet.getUint8(0) >> 4 === 6) {
+				} else if(this.packet.getUint8(14) >> 4 === 6) {
 					arr.push(`Type: IPv6 (0x${this.proto.toString(16)})`);
 				} else {
 					arr.push(`Type: Unknown (0x${this.proto.toString(16)})`);
@@ -94,6 +87,9 @@ export class EthernetPacket {
 
 			case 0x806:
 				arr.push(`Type: ARP (0x${this.proto.toString(16)})`);
+				break;
+			case 0x8100:
+				arr.push(`Type: 802.1Q Virtual LAN (0x${this.proto.toString(16)})`);
 				break;
 			case 0x86dd:
 				arr.push(`Type: IPv6 (0x${this.proto.toString(16)})`);

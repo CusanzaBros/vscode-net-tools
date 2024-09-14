@@ -1,9 +1,239 @@
 import { EthernetPacket } from "../packet/ether";
 import { GenericPacket } from "../packet/genericPacket";
+import { SLL2Packet } from "../packet/sll2";
+
+function getLinkName(id:number):string {
+	switch (id) {
+		case 0: return "NULL";
+		case 1: return "Ethernet";
+		case 2: return "Experimental Ethernet";
+		case 3: return "AX.25";
+		case 4: return "Proteon ProNET Token Ring";
+		case 5: return "Chaos";
+		case 6: return "IEEE 802.5 Token Ring";
+		case 7: return "ARCNET";
+		case 8: return "SLIP";
+		case 9: return "PPP";
+		case 10: return "FDDI";
+		case 32: return "Redback SmartEdge 400/800";
+		case 50: return "PPP_SERIAL";
+		case 51: return "PPPoE";
+		case 99: return "SYMANTEC_FIREWALL";
+		case 100: return "ATM_RFC1483";
+		case 101: return "RAW";
+		case 104: return "C_HDLC";
+		case 105: return "IEEE802_11";
+		case 106: return "ATM_CLIP";
+		case 107: return "FRELAY";
+		case 108: return "LOOP";
+		case 109: return "ENC";
+		case 112: return "HDLC";
+		case 113: return "LINUX_SLL";
+		case 114: return "LTALK";
+		case 115: return "ECONET";
+		case 116: return "IPFILTER";
+		case 117: return "PFLOG";
+		case 118: return "CISCO_IOS";
+		case 119: return "PRISM_HEADER";
+		case 120: return "AIRONET_HEADER";
+		case 122: return "IP_OVER_FC";
+		case 123: return "SUNATM";
+		case 124: return "RIO";
+		case 125: return "PCI_EXP";
+		case 126: return "AURORA";
+		case 127: return "IEEE802_11_RADIO";
+		case 128: return "TZSP";
+		case 129: return "ARCNET_LINUX";
+		case 130: return "JUNIPER_MLPPP";
+		case 131: return "JUNIPER_MLFR";
+		case 132: return "JUNIPER_ES";
+		case 133: return "JUNIPER_GGSN";
+		case 134: return "JUNIPER_MFR";
+		case 135: return "JUNIPER_ATM2";
+		case 136: return "JUNIPER_SERVICES";
+		case 137: return "JUNIPER_ATM1";
+		case 138: return "APPLE_IP_OVER_IEEE1394";
+		case 139: return "MTP2_WITH_PHDR";
+		case 140: return "MTP2";
+		case 141: return "MTP3";
+		case 142: return "SCCP";
+		case 143: return "DOCSIS";
+		case 144: return "LINUX_IRDA";
+		case 145: return "IBM_SP";
+		case 146: return "IBM_SN";
+		case 147:
+		case 148:
+		case 149:
+		case 150:
+		case 151:
+		case 152:
+		case 153:
+		case 154:
+		case 155:
+		case 156:
+		case 157:
+		case 158:
+		case 159:
+		case 160:
+		case 161:
+		case 162: return "USER0–DLT_USER15";
+		case 163: return "IEEE802_11_RADIO_AVS";
+		case 164: return "JUNIPER_MONITOR";
+		case 165: return "BACNET_MS_TP";
+		case 166: return "PPP_PPPD";
+		case 167: return "JUNIPER_PPPOE";
+		case 168: return "JUNIPER_PPPOE_ATM";
+		case 169: return "GPRS_LLC";
+		case 170: return "GPF_T";
+		case 171: return "GPF_F";
+		case 172: return "GCOM_T1E1";
+		case 173: return "GCOM_SERIAL";
+		case 174: return "JUNIPER_PIC_PEER";
+		case 175: return "ERF_ETH";
+		case 176: return "ERF_POS";
+		case 177: return "LINUX_LAPD";
+		case 178: return "JUNIPER_ETHER";
+		case 179: return "JUNIPER_PPP";
+		case 180: return "JUNIPER_FRELAY";
+		case 181: return "JUNIPER_CHDLC";
+		case 182: return "MFR";
+		case 183: return "JUNIPER_VP";
+		case 184: return "A429";
+		case 185: return "A653_ICM";
+		case 186: return "USB_FREEBSD";
+		case 187: return "BLUETOOTH_HCI_H4";
+		case 188: return "IEEE802_16_MAC_CPS";
+		case 189: return "USB_LINUX";
+		case 190: return "CAN20B";
+		case 191: return "IEEE802_15_4_LINUX";
+		case 192: return "PPI";
+		case 193: return "IEEE802_16_MAC_CPS_RADIO";
+		case 194: return "JUNIPER_ISM";
+		case 195: return "IEEE802_15_4_WITHFCS";
+		case 196: return "SITA";
+		case 197: return "ERF";
+		case 198: return "RAIF1";
+		case 199: return "IPMB_KONTRON";
+		case 200: return "JUNIPER_ST";
+		case 201: return "BLUETOOTH_HCI_H4_WITH_PHDR";
+		case 202: return "AX25_KISS";
+		case 203: return "LAPD";
+		case 204: return "PPP_WITH_DIR";
+		case 205: return "C_HDLC_WITH_DIR";
+		case 206: return "FRELAY_WITH_DIR";
+		case 207: return "LAPB_WITH_DIR";
+		case 209: return "IPMB_LINUX";
+		case 209: return "I2C_LINUX";
+		case 210: return "FLEXRAY";
+		case 211: return "MOST";
+		case 212: return "LIN";
+		case 213: return "X2E_SERIAL";
+		case 214: return "X2E_XORAYA";
+		case 215: return "IEEE802_15_4_NONASK_PHY";
+		case 216: return "LINUX_EVDEV";
+		case 217: return "GSMTAP_UM";
+		case 218: return "GSMTAP_ABIS";
+		case 219: return "MPLS";
+		case 220: return "USB_LINUX_MMAPPED";
+		case 221: return "DECT";
+		case 222: return "AOS";
+		case 223: return "WIHART";
+		case 224: return "FC_2";
+		case 225: return "FC_2_WITH_FRAME_DELIMS";
+		case 226: return "IPNET";
+		case 227: return "CAN_SOCKETCAN";
+		case 228: return "IPV4";
+		case 229: return "IPV6";
+		case 230: return "IEEE802_15_4_NOFCS";
+		case 231: return "DBUS";
+		case 232: return "JUNIPER_VS";
+		case 233: return "JUNIPER_SRX_E2E";
+		case 234: return "JUNIPER_FIBRECHANNEL";
+		case 235: return "DVB_CI";
+		case 236: return "MUX27010";
+		case 237: return "STANAG_5066_D_PDU";
+		case 238: return "JUNIPER_ATM_CEMIC";
+		case 239: return "NFLOG";
+		case 240: return "NETANALYZER";
+		case 241: return "NETANALYZER_TRANSPARENT";
+		case 242: return "IPOIB";
+		case 243: return "MPEG_2_TS";
+		case 244: return "NG40";
+		case 245: return "NFC_LLCP";
+		case 246: return "PFSYNC";
+		case 247: return "INFINIBAND";
+		case 248: return "SCTP";
+		case 249: return "USBPCAP";
+		case 250: return "RTAC_SERIAL";
+		case 251: return "BLUETOOTH_LE_LL";
+		case 252: return "WIRESHARK_UPPER_PDU";
+		case 253: return "NETLINK";
+		case 254: return "BLUETOOTH_LINUX_MONITOR";
+		case 255: return "BLUETOOTH_BREDR_BB";
+		case 256: return "BLUETOOTH_LE_LL_WITH_PHDR";
+		case 257: return "PROFIBUS_DL";
+		case 258: return "PKTAP";
+		case 259: return "EPON";
+		case 260: return "IPMI_HPM_2";
+		case 261: return "ZWAVE_R1_R2";
+		case 262: return "ZWAVE_R3";
+		case 263: return "WATTSTOPPER_DLM";
+		case 264: return "ISO_14443";
+		case 265: return "RDS";
+		case 266: return "USB_DARWIN";
+		case 267: return "OPENFLOW";
+		case 268: return "SDLC";
+		case 269: return "TI_LLN_SNIFFER";
+		case 270: return "LORATAP";
+		case 271: return "VSOCK";
+		case 272: return "NORDIC_BLE";
+		case 273: return "DOCSIS31_XRA31";
+		case 274: return "ETHERNET_MPACKET";
+		case 275: return "DISPLAYPORT_AUX";
+		case 276: return "LINUX_SLL2";
+		case 277: return "SERCOS_MONITOR";
+		case 278: return "OPENVIZSLA";
+		case 279: return "EBHSCR";
+		case 280: return "VPP_DISPATCH";
+		case 281: return "DSA_TAG_BRCM";
+		case 282: return "DSA_TAG_BRCM_PREPEND";
+		case 283: return "IEEE802_15_4_TAP";
+		case 284: return "DSA_TAG_DSA";
+		case 285: return "DSA_TAG_EDSA";
+		case 286: return "ELEE";
+		case 287: return "Z_WAVE_SERIAL";
+		case 288: return "USB_2_0";
+		case 289: return "ATSC_ALP";
+		case 290: return "ETW";
+		case 291: return "NETANALYZER_NG";
+		case 292: return "ZBOSS_NCP";
+		case 293: return "USB_2_0_LOW_SPEED";
+		case 294: return "USB_2_0_FULL_SPEED";
+		case 295: return "USB_2_0_HIGH_SPEED";
+		case 296: return "AUERSWALD_LOG";
+		case 297: return "ZWAVE_TAP";
+		case 298: return "SILABS_DEBUG_CHANNEL";
+		case 299: return "FIRA_UCI";
+		case 300: return "MDB";
+		case 301: return "DECT_NR";
+		default:
+			return "Unknown";
+	}
+}
+
 
 export class Section {
 	startoffset: number = 0;
 	endoffset: number = 0;
+
+	static processPayload(linktype: number, payload: DataView): GenericPacket {
+		if (linktype === 1) {  //Ethernet II
+			return new EthernetPacket(payload);
+		} else if (linktype === 276) { // Linux SLL2
+			return new SLL2Packet(payload);
+		} 
+		return new GenericPacket(payload);
+	}
 
 	constructor(
 		protected readonly _packet: DataView
@@ -27,10 +257,10 @@ export class Section {
 		if(magic === 0x0A0D0D0A) {
 			return PCAPNGSection.createPCAPNG(bytes, 0);
 		}
-		throw new Error("not a pcap/pcapng");
+		throw new Error("Not a pcap/pcapng");
 	}
 
-	static createNext(bytes: Uint8Array, prevRecord: Section, headerRecord: HeaderSection): Section {
+	static createNext(bytes: Uint8Array, prevRecord: Section, headerRecord: Section): Section {
 		if(headerRecord.fileType === 1) {
 			return new PCAPPacketRecord(bytes, prevRecord.endoffset, headerRecord as PCAPHeaderRecord);
 		}
@@ -56,27 +286,21 @@ export class Section {
 	get getASCII(): string {
 		const decoder = new TextDecoder('ascii');
 		return decoder.decode(this._packet).replaceAll(/[\x00\W]/g, ".");
-
 	}
 
 	get toString() {
-		return "section";
+		return "Basic Section";
 	}
-}
 
-export class HeaderSection extends Section {
-
-	get fileType() {
-		return -1;
+	get comments():string[] {
+		return [];
 	}
-}
 
+	get fileType():number { return -1; };
+}
 
 
 //#region PCAP
-
-
-
 
 
 
@@ -86,19 +310,21 @@ export class PCAPPacketRecord extends Section {
 	timestamp2: number;
 	capturedlength: number;
 	originallength: number;
-	packet: EthernetPacket;
+	packet: GenericPacket;
 
 	constructor(bytes: Uint8Array, offset: number, header: PCAPHeaderRecord) {
 		const dv = new DataView(bytes.buffer, offset, 16);
-		super(new DataView(bytes.buffer, offset, dv.getUint32(8, header.getle) + 16));
+		super(new DataView(bytes.buffer, offset, dv.getUint32(8, header.le) + 16));
 		this.startoffset = offset;
 		header.isMS;
-		this.timestamp1 = new Date(this._packet.getUint32(0, header.getle)*1000);
-		this.timestamp2 = this._packet.getUint32(4, header.getle);
-		this.capturedlength = this._packet.getUint32(8, header.getle);
-		this.originallength = this._packet.getUint32(12, header.getle);
+		this.timestamp1 = new Date(this._packet.getUint32(0, header.le)*1000);
+		this.timestamp2 = this._packet.getUint32(4, header.le);
+		this.capturedlength = this._packet.getUint32(8, header.le);
+		this.originallength = this._packet.getUint32(12, header.le);
 		this.endoffset = this.capturedlength + offset + 16;
-		this.packet = new EthernetPacket(new DataView(bytes.buffer, offset + 16, this.capturedlength));
+
+		this.packet = Section.processPayload(header.linktype, new DataView(bytes.buffer, offset + 16, this.capturedlength));
+		
 		if(header.isMS) {
 			this.timestamp2*=1000;
 		}
@@ -109,7 +335,10 @@ export class PCAPPacketRecord extends Section {
 	}
 
 	get getProperties(): Array<any> {
-		return [this.packet.getProperties];
+		return [
+			`Packet Block: ${this.originallength} bytes on wire, ${this.capturedlength} bytes captured`,
+			this.packet.getProperties
+		];
 	}
 
 	get getHex(): string {
@@ -127,7 +356,7 @@ export class PCAPPacketRecord extends Section {
 	}
 }
 
-export class PCAPHeaderRecord extends HeaderSection {
+export class PCAPHeaderRecord extends Section {
 	magic: number;
 	major: number;
 	minor: number;
@@ -171,12 +400,9 @@ export class PCAPHeaderRecord extends HeaderSection {
 	}
 
 	get toString() {
-		return `magic number: ${this.magic.toString(16)}, version: ${this.major.toString()}.${this.minor.toString()}, snaplen: ${this.snaplen.toString()}, linktype: ${this.linktype.toString()}`;
+		return `magic number: ${this.magic.toString(16)}, version: ${this.major.toString()}.${this.minor.toString()}, snaplen: ${this.snaplen.toString()}, linktype: ${getLinkName(this.linktype)} (${this.linktype.toString()})`;
 	}
 
-	get getle() {
-		return this.le;
-	}
 }
 
 
@@ -189,8 +415,8 @@ export class PCAPHeaderRecord extends HeaderSection {
 
 
 export class PCAPNGSection extends Section {
-
-
+	_le: boolean;
+	
 	static createPCAPNG(bytes: Uint8Array, offset: number, header?: PCAPNGSectionHeaderBlock): Section {
 		
 		if(bytes.byteLength <= offset) {
@@ -199,7 +425,7 @@ export class PCAPNGSection extends Section {
 		let dv = new DataView(bytes.buffer, offset, bytes.byteLength - offset);
 		const le: boolean = header === undefined ? (dv.getUint32(8, true) === 0x1A2B3C4D): header.le;
 		const blockType = dv.getUint32(0, le);
-		const blockLength = dv.getUint32(4, le);
+		const blockLength = Math.ceil(dv.getUint32(4, le) / 4) * 4;
 		dv = new DataView(bytes.buffer, offset, blockLength);
 
 		switch(blockType) {
@@ -210,6 +436,11 @@ export class PCAPNGSection extends Section {
 					throw new Error("header required");
 				}
 				return new PCAPNGInterfaceDescriptionBlock(dv, header);
+			case 0x00000003:
+				if(header === undefined) {
+					throw new Error("header required");
+				}
+				return new PCAPNGSimplePacketBlock(dv, header);				
 			case 0x00000005:
 				if(header === undefined) {
 					throw new Error("header required");
@@ -227,38 +458,46 @@ export class PCAPNGSection extends Section {
 				return new PCAPNGGenericBlock(dv, header);
 		}
 	}
-	
-}
 
-export class PCAPNGInterfaceDescriptionBlock extends Section {
-	blockType: number;
-	blockLength: number;
-	le: boolean;
-	interfaceID: number;
-
-	constructor(dv: DataView, header: PCAPNGSectionHeaderBlock) {
+	constructor(dv: DataView, le: boolean) {
 		super(dv);
-		this.blockType = this._packet.getUint32(0, header.le);
-		this.le = header.le;
-		this.interfaceID = header.interfaceCount++;
-		this.blockLength = this._packet.getUint32(4, header.le);
-		
-	}
-	
-	get linkType() {
-		return this._packet.getUint16(8, this.le);
+		this._le = le;
 	}
 
-	get snapLen() {
-		return this._packet.getUint32(12, this.le);
+	get le():boolean { return this._le; };
+
+	get optionStartOffset():number { return 20; };
+
+	get blockType():number {
+		return this._packet.getUint32(0, this.le);
+	}
+
+	get blockLength():number {
+		return Math.ceil(this._packet.getUint32(4, this.le) / 4) * 4;
+	}
+
+	get comments():string[] {
+		const ret:string[] = [];
+
+		if(this.options !== undefined) {
+			for (const opt of this.options) {
+				if (opt.code === 1) {
+					const decoder = new TextDecoder('utf-8');
+					ret.push(decoder.decode(opt.value));
+				}
+			};
+		}
+		return ret;
 	}
 
 	get options() {
 		const options: PCAPNGOption[] = [];
-		if(this.blockLength <= 20) {
+		if(this.optionStartOffset >= this.blockLength-4) {
 			return options;
 		}
-		let i = this._packet.byteOffset + 16;
+
+		let i = this._packet.byteOffset + this.optionStartOffset;
+		
 		do {
 			const option = new PCAPNGOption(this._packet.buffer, i, this.le);
 			if(option.code !== 0) {
@@ -270,28 +509,53 @@ export class PCAPNGInterfaceDescriptionBlock extends Section {
 			if(option.length % 4) {
 				i += 4 - option.length % 4;
 			}
-		} while(true);
+		} while(i < this._packet.byteLength-4);
+		
 		return options;
 	}
+	
+}
+
+
+export class PCAPNGInterfaceDescriptionBlock extends PCAPNGSection {
+	interfaceID: number;
+
+	constructor(dv: DataView, header: PCAPNGSectionHeaderBlock) {
+		super(dv, header.le);
+		header.interfaces.push(this);
+		this.interfaceID = header.interfaceCount++;
+	}
+	
+	get linkType() {
+		return this._packet.getUint16(8, this.le);
+	}
+
+	get snapLen() {
+		return this._packet.getUint32(12, this.le);
+	}
+
+	get optionStartOffset():number { return 16; };
 
 	get toString() {
-		let name = "Unnamed";
-		const decoder = new TextDecoder('utf-8');
+		return `Interface ${this.interfaceID}: ${this.Name}`;
+	}
+
+	get Name():string {
 		if(this.options !== undefined) {
-			for(let i = 0; i < this.options?.length; i++) {
-				if(this.options[i].code === 2) {
-					name = `${decoder.decode(this.options[i].value)}`;
+			for (const opt of this.options) {
+				if (opt.code === 2) {
+					const decoder = new TextDecoder('utf-8');
+					return decoder.decode(opt.value);
 				}
-			}
+			};
 		}
-		return `Interface ${this.interfaceID}: ${name}`;
+		return "Unnamed";
 	}
 
 	get getProperties(): Array<any> {
 		const arr: Array<any> = [
 			"*Interface Description Block"
 		];
-		let optionsText = "";
 		const decoder = new TextDecoder('utf-8');
 		if(this.options !== undefined) {
 			for(let i = 0; i < this.options?.length; i++) {
@@ -335,26 +599,16 @@ class PCAPNGOption {
 
 }
 
-export class PCAPNGGenericBlock extends Section {
+export class PCAPNGGenericBlock extends PCAPNGSection {
 	data: GenericPacket;
-	le: boolean;
 
 	constructor(dv: DataView, header: PCAPNGSectionHeaderBlock) {
-		super(dv);
-		this.le = header.le;
-	
-		this.data = new GenericPacket(new DataView(dv.buffer, dv.byteOffset + 28, this.blockLength - 12));
+		super(dv, header.le);
+		this.data = new GenericPacket(new DataView(dv.buffer, dv.byteOffset + 8, this.blockLength - 12));
 		
 	}
 
-	get blockType() {
-		return this._packet.getUint32(0, this.le);
-	}
 
-	get blockLength() {
-		return this._packet.getUint32(4, this.le);
-	}
-	
 	get toString() {
 		return `Block Type ${this.blockType} (${this.blockLength} bytes): ${this.data.toString}`;
 	}
@@ -369,24 +623,15 @@ export class PCAPNGGenericBlock extends Section {
 	}
 }
 
-export class PCAPNGEnhancedPacketBlock extends Section {
-	data: EthernetPacket;
-	le: boolean;
+export class PCAPNGEnhancedPacketBlock extends PCAPNGSection {
+	data: GenericPacket;
+	private _header: PCAPNGSectionHeaderBlock;
 
 	constructor(dv: DataView, header: PCAPNGSectionHeaderBlock) {
-		super(dv);
-		this.le = header.le;
-	
-		this.data = new EthernetPacket(new DataView(dv.buffer, dv.byteOffset + 28, this.capturedLength));
-		
-	}
+		super(dv, header.le);
+		this._header = header;
 
-	get blockType() {
-		return this._packet.getUint32(0, this.le);
-	}
-
-	get blockLength() {
-		return this._packet.getUint32(4, this.le);
+		this.data = Section.processPayload(header.interfaces[this.interfaceID].linkType, new DataView(dv.buffer, dv.byteOffset + 28, this.capturedLength));
 	}
 
 	get interfaceID() {
@@ -409,49 +654,24 @@ export class PCAPNGEnhancedPacketBlock extends Section {
 		return this._packet.getUint32(24, this.le);
 	}
 
-	get options() {
-		const options: PCAPNGOption[] = [];
+	get optionStartOffset():number {
 		let optionstart = 28 + this.capturedLength;
 		if(this.capturedLength % 4) {
 			optionstart += 4 - this.capturedLength % 4;
 		}
-		if(optionstart >= this.blockLength-4) {
-			return options;
-		}
-		let i = this._packet.byteOffset + optionstart;
-		do {
-			const option = new PCAPNGOption(this._packet.buffer, i, this.le);
-			if(option.code !== 0) {
-				options.push(option);
-			} else {
-				break;
-			}
-			i+= option.length+4;
-			if(option.length % 4) {
-				i += 4 - option.length % 4;
-			}
-		} while(true);
-		return options;
+		return optionstart;
 	}
 	
 	get timestamp(): string {
 		const upper64 = BigInt(this.tsHigh) << 32n;
 		const lower64 = BigInt(this.tsLow);
 		
-
-
-
-
-
-
 		let timeVal: number = Number(upper64 | lower64);
 		let timeValSec: number = timeVal/1000;
 		let ms = timeVal%1000000;
 		let date = new Date(timeValSec);
 		return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")} ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}:${date.getSeconds().toString().padStart(2, "0")}.${(ms*1000).toString().padStart(9, "0")}`;
 	}
-
-
 
 	get toString() {
 		let optionsText = "";
@@ -485,8 +705,8 @@ export class PCAPNGEnhancedPacketBlock extends Section {
 
 	get getProperties(): Array<any> {
 		const arr: Array<any> = [
-			"*Enhanced Packet Block",
-			`Interface ID: ${this.interfaceID}`
+			`*Enhanced Packet Block: ${this.originalLength} bytes on wire, ${this.capturedLength} bytes captured`,
+			`Interface ID: ${this._header.interfaces[this.interfaceID].Name} (${this.interfaceID})`
 		];
 
 		return [arr, this.data.getProperties];
@@ -507,20 +727,64 @@ export class PCAPNGEnhancedPacketBlock extends Section {
 	}
 }
 
-class PCAPNGInterfaceStatisticsBlock extends Section {
-	le: boolean;
+
+export class PCAPNGSimplePacketBlock extends PCAPNGSection {
+	data: GenericPacket;
 
 	constructor(dv: DataView, header: PCAPNGSectionHeaderBlock) {
-		super(dv);
-		this.le = header.le;
+		super(dv, header.le);
+	
+		this.data = Section.processPayload(header.interfaces[0].linkType, new DataView(dv.buffer, dv.byteOffset + 12, this.capturedLength));
 	}
 
-	get blockType() {
-		return this._packet.getUint32(0, this.le);
+	get capturedLength() {
+		return this.blockLength-16;
 	}
 
-	get blockLength() {
-		return this._packet.getUint32(4, this.le);
+	get originalLength() {
+		return this._packet.getUint32(8, this.le);
+	}
+
+	get optionStartOffset():number {
+		return 0;
+	}
+	
+	get options() {
+		return [];
+	}
+
+	get toString() {
+		return `${this.data.toString}`;
+	}
+
+	get getProperties(): Array<any> {
+		const arr: Array<any> = [
+			`*Simple Packet Block: ${this.originalLength} bytes on wire, ${this.capturedLength} bytes captured`,
+			`Interface ID: 0`
+		];
+
+		return [arr, this.data.getProperties];
+	}
+
+	get getHex(): string {
+		let ret = "";
+		for (let i = 0; i < this.data.packet.byteLength; i++) {
+			ret += this.data.packet.getUint8(i).toString(16).padStart(2, "0") + " ";
+		}
+		return ret.trimEnd();
+	}
+
+	get getASCII(): string {
+		const decoder = new TextDecoder('ascii');
+		return decoder.decode(this.data.packet).replaceAll(/[\x00\W]/g, ".");
+
+	}
+}
+
+
+class PCAPNGInterfaceStatisticsBlock extends PCAPNGSection {
+	constructor(dv: DataView, header: PCAPNGSectionHeaderBlock) {
+		super(dv, header.le);
 	}
 
 	get interfaceID() {
@@ -535,28 +799,8 @@ class PCAPNGInterfaceStatisticsBlock extends Section {
 		return this._packet.getUint32(16, this.le);
 	}
 
+	get optionStartOffset():number { return 20; };
 
-	get options() {
-		const options: PCAPNGOption[] = [];
-		if(this.blockLength <= 24) {
-			return options;
-		}
-		let i = this._packet.byteOffset + 20;
-		do {
-			const option = new PCAPNGOption(this._packet.buffer, i, this.le);
-			if(option.code !== 0) {
-				options.push(option);
-			} else {
-				break;
-			}
-			i+= option.length+4;
-			if(option.length % 4) {
-				i += 4 - option.length % 4;
-			}
-		} while(i < this._packet.byteLength-4);
-		return options;
-	}
-	
 	get toString() {
 		let optionsText = "";
 		const decoder = new TextDecoder('utf-8');
@@ -596,49 +840,45 @@ class PCAPNGInterfaceStatisticsBlock extends Section {
 	}
 }
 
-export class PCAPNGSectionHeaderBlock extends HeaderSection {
-	blockType: number;
-	blockLength: number;
-	le: boolean;
+export class PCAPNGSectionHeaderBlock extends PCAPNGSection {
 	public interfaceCount: number = 0;
+	public interfaces: PCAPNGInterfaceDescriptionBlock[] = [];
 
 	constructor(dv: DataView) {
-		super(dv);
-		this.blockType = this._packet.getUint32(0, true);
-		this.le = this._packet.getUint32(8, true) === 0x1A2B3C4D;
-		this.blockLength = this._packet.getUint32(4, this.le);
+		super(dv, true);
+		this._le = this._packet.getUint32(8, true) === 0x1A2B3C4D;
 	}
 
 	get fileType() {
 		return 2;
 	}
 
+	get optionStartOffset():number { return 24; };
+
 	get toString() {
-		return `Section Header Block`;
+		
+		let optionsText = "";
+		const decoder = new TextDecoder('utf-8');
+		if(this.options !== undefined) {
+			if (this.options.length > 0) {
+				optionsText = ": ";
+			}
+
+			for(let i = 0; i < this.options?.length; i++) {
+				switch(this.options[i].code) {
+					case 2:
+					case 3:
+					case 4:
+						optionsText += `${decoder.decode(this.options[i].value)}; `;
+					default:
+						break;
+				}
+			}
+		}
+
+		return `Section Header${optionsText.substring(0, optionsText.length-2)}`;
 	}
 	
-	get options() {
-		const options: PCAPNGOption[] = [];
-		if(this.blockLength <= 24) {
-			return options;
-		}
-		let i = this._packet.byteOffset + 24;
-		do {
-			const option = new PCAPNGOption(this._packet.buffer, i, this.le);
-			if(option.code !== 0) {
-				options.push(option);
-			} else {
-				break;
-			}
-			i+= option.length+4;
-			if(option.length % 4) {
-				i += 4 - option.length % 4;
-			}
-		} while(true);
-		return options;
-	}
-
-
 	get getProperties(): Array<any> {
 		const arr: Array<any> = [
 			"*Section Header Block"

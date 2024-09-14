@@ -11,7 +11,7 @@
     let colors = oldState.colors;
     let selected = null;
 
-    document.querySelectorAll('.packet').forEach((element) => {
+    document.querySelectorAll('.packet, .comment').forEach((element) => {
         element.addEventListener('click', (e) => {
             vscode.postMessage({ type: 'packetSelected', value: e.target.id});
             if(selected !== null) {

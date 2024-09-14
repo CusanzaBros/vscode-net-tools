@@ -13,22 +13,22 @@ export class IPv4Packet extends GenericPacket {
 		switch (this.protocol) {
 			case 0x01:
 				this.innerPacket = new ICMPPacket(
-					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, this.totalLength - this.ihl*4),
+					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, packet.byteLength - this.ihl*4),
 				);
 				break;
 			case 0x06:
 				this.innerPacket = new TCPPacket(
-					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, this.totalLength - this.ihl*4),
+					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, packet.byteLength - this.ihl*4),
 				);
 				break;
 			case 0x11:
 				this.innerPacket = new UDPPacket(
-					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, this.totalLength - this.ihl*4),
+					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, packet.byteLength - this.ihl*4),
 				);
 				break;
 			default:
 				this.innerPacket = new GenericPacket(
-					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, this.totalLength - this.ihl*4),
+					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, packet.byteLength - this.ihl*4),
 				);
 		}
 	

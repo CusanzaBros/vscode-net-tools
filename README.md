@@ -7,6 +7,8 @@ The goal of this extension is to provide a set useful tools for anyone that need
 
 * PCAP and PCAPNG file viewer with parsers for the following protocols:
     * Ethernet II
+    * SLL2
+    * 802.1Q VLAN
     * ARP
     * IPv4
     * IPv6
@@ -16,6 +18,7 @@ The goal of this extension is to provide a set useful tools for anyone that need
     * ICMP
     * ICMPv6
     * DNS & mDNS
+    * HTTP
 
 * Ability to search within and copy/paste from ouput.
 
@@ -43,6 +46,20 @@ None!
 
 ## Release Notes
 
+### 1.1.0
+
+* Implemented SLL2, 802.1Q VLAN, HTTP, PCAPNG Simple Packet Block
+
+* Fixed bugs:
+    * Incorrect packet length calculation when captured length < original length
+    * PCAPNG packets not aligned to 4 byte boundary caused incorrect calculation
+    * Handling of non-ethernet packets
+    * Showing line-numbering for non-packet rows
+
+* Added in-line comments
+
+
+
 ### 1.0.0
 
-Initial release of VSCode Network Tools
+* Initial release of VSCode Network Tools

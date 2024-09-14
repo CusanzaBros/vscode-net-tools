@@ -1,18 +1,29 @@
 import { GenericPacket } from "./genericPacket";
+import { DNSPacket } from "./dnsPacket";
+import { HTTPPacket } from "./httpPacket";
 
 export class TCPPacket extends GenericPacket {
-	packet: DataView;
 	innerPacket: GenericPacket;
 
 	constructor(packet: DataView) {
 		super(packet);
-		this.packet = packet;
-		switch (this.destPort) {
-			default:
-				this.innerPacket = new GenericPacket(
-					new DataView(packet.buffer, packet.byteOffset + this.dataOffset*4, packet.byteLength - this.dataOffset*4),
-				);
+
+		
+		const dv = new DataView(packet.buffer, packet.byteOffset + this.dataOffset*4, packet.byteLength - this.dataOffset*4);
+
+		if (dv.byteLength > 0) {
+			if(this.destPort === 53 || this.srcPort === 53) {
+				this.innerPacket = new DNSPacket(dv);
+				return;
+			}
+
+			if(this.destPort === 80 || this.srcPort === 80) {
+				this.innerPacket = new HTTPPacket(dv);
+				return;
+			}
 		}
+		
+		this.innerPacket = new GenericPacket(dv);
 	}
 
 	get srcPort() {

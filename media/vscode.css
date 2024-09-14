@@ -95,13 +95,24 @@ textarea::placeholder {
 }
 
 .line-numbers span {
+	counter-increment: none;
+}
+
+.line-numbers .numbered {
 	counter-increment: linenumber;
 }
 
-.line-numbers span::before {
+.line-numbers .numbered::before {
 	content: counter(linenumber);
 	display: block;
 	color: var(--vscode-editorLineNumber-foreground);
+}
+
+.line-numbers span::before {
+	content: "\a";
+	white-space: pre;
+	  display: block;
+	  color: var(--vscode-editorLineNumber-foreground);
 }
 
 .editor {
@@ -129,6 +140,11 @@ textarea::placeholder {
 
 .packet {
 	outline: none;
+}
+
+.text-output .comment {
+	outline: none;
+	color: #009200;
 }
 
 .packet:hover {

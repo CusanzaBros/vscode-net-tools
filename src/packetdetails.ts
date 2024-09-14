@@ -12,10 +12,15 @@ export class PacketViewProvider implements vscode.WebviewViewProvider {
     if (this._view === undefined) {
       return;
     }
+
     this._view.webview.html = this._getHtmlForWebview(
       this._view.webview,
       section
     );
+
+    if (section !== undefined) {
+      this._view.show?.(true);
+    }
   }
 
   public resolveWebviewView(
@@ -26,44 +31,16 @@ export class PacketViewProvider implements vscode.WebviewViewProvider {
     this._view = webviewView;
 
     webviewView.webview.options = {
-      // Allow scripts in the webview
       enableScripts: true,
-
       localResourceRoots: [this._extensionUri],
     };
 
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-
-    webviewView.webview.onDidReceiveMessage((data) => {
-      switch (data.type) {
-        case "colorSelected": {
-          vscode.window.activeTextEditor?.insertSnippet(
-            new vscode.SnippetString(`#${data.value}`)
-          );
-          break;
-        }
-      }
-    });
-  }
-
-  public addColor() {
-    if (this._view) {
-      this._view.show?.(true); // `show` is not implemented in 1.49 but is for 1.50 insiders
-      this._view.webview.postMessage({ type: "addColor" });
-    }
-  }
-
-  public clearColors() {
-    if (this._view) {
-      this._view.webview.postMessage({ type: "clearColors" });
-    }
   }
 
   private printArray(pa: Array<any>, depth: number): string {
     let ret = "";
-
     let bFirst = true;
-
     let bBranch = false;
 
     if (depth === 0) {
@@ -73,30 +50,22 @@ export class PacketViewProvider implements vscode.WebviewViewProvider {
     pa.forEach((a) => {
       if (Array.isArray(a)) {
         ret += this.printArray(a, depth + 1);
-
         ret += "</ul>";
-
         ret += "</details>";
-
         ret += "</li>";
       } else {
         let textNode = a.toString();
-
         let textOpen = "";
 
         if (textNode[0] === "*") {
           textOpen = " open";
-
           textNode = textNode.slice(1);
         }
 
         if (depth && bFirst) {
           bFirst = false;
-
           ret += `<li><details${textOpen}>`;
-
           ret += `<summary><span>${textNode}</span></summary>`;
-
           ret += "<ul>";
         } else {
           ret += `<li><span>${textNode}</span></li>`;
