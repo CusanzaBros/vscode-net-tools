@@ -216,6 +216,9 @@ class ICMPv6NeighborSolicitation extends ICMPv6Info {
     }   
 
     get option() {
+        if(this.packet.byteLength <= 24) {
+            return undefined;
+        }
         let ret = "";
 		for(let i = 0; i < 6; i++) {
 			ret += this.packet.getUint8(26 + i).toString(16).padStart(2, "0");

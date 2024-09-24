@@ -2,34 +2,33 @@ import { GenericPacket } from "./genericPacket";
 import { ICMPPacket } from "./icmpPacket";
 import { TCPPacket } from "./tcpPacket";
 import { UDPPacket } from "./udpPacket";
+import { igmpPacket } from "./igmpPacket";
 
 export class IPv4Packet extends GenericPacket {
 	packet: DataView;
 	innerPacket: GenericPacket;
+	private isGeneric: boolean = false;
 
 	constructor(packet: DataView) {
 		super(packet);
 		this.packet = packet;
+		const dv = new DataView(packet.buffer, packet.byteOffset + this.ihl*4, packet.byteLength - this.ihl*4);
 		switch (this.protocol) {
 			case 0x01:
-				this.innerPacket = new ICMPPacket(
-					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, packet.byteLength - this.ihl*4),
-				);
+				this.innerPacket = new ICMPPacket(dv);
+				break;
+			case 0x02:
+				this.innerPacket = new igmpPacket(dv);
 				break;
 			case 0x06:
-				this.innerPacket = new TCPPacket(
-					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, packet.byteLength - this.ihl*4),
-				);
+				this.innerPacket = new TCPPacket(dv);
 				break;
 			case 0x11:
-				this.innerPacket = new UDPPacket(
-					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, packet.byteLength - this.ihl*4),
-				);
+				this.innerPacket = new UDPPacket(dv);
 				break;
 			default:
-				this.innerPacket = new GenericPacket(
-					new DataView(packet.buffer, packet.byteOffset + this.ihl*4, packet.byteLength - this.ihl*4),
-				);
+				this.innerPacket = new GenericPacket(dv);
+				this.isGeneric = true;
 		}
 	
 	}
@@ -118,7 +117,10 @@ export class IPv4Packet extends GenericPacket {
     }
 
 	get toString() {
-		return `IPv${this.version}, ${this.srcAddress} > ${this.destAddress}, ${this.innerPacket.toString} `;
+		if ( this.isGeneric) {
+			return `IPv${this.version}, ${this.srcAddress} > ${this.destAddress}, (0x${this.protocol.toString(16).padStart(4, "0")}): ${this.innerPacket.toString}`;
+		} 
+		return `IPv${this.version}, ${this.srcAddress} > ${this.destAddress}, ${this.innerPacket.toString}`;
 	}
 
 	get getProperties(): Array<any> {

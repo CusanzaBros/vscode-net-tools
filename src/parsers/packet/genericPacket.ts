@@ -6,18 +6,11 @@ export class GenericPacket {
 	}
 
 	get toString() {
-		let ret = "";
-		for (let i = 0; i < this.packet.byteLength && i < 32; i++) {
-			ret += this.packet.getUint8(i).toString(16).padStart(2, "0") + " ";
+		if(this.packet.byteLength === 0) {
+			return "";
 		}
 
-		if(this.packet.byteLength > 32) {
-			ret += `(+${this.packet.byteLength-32} bytes)`;
-		}
-
-		return ret.trimEnd();
-
-		
+		return `+${this.packet.byteLength} bytes unparsed data`;		
 	}
 
 	get getProperties(): Array<any> {

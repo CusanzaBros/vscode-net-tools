@@ -3,6 +3,7 @@ import { GenericPacket } from "./genericPacket";
 import { IPv4Packet } from "./ipv4Packet";
 import { IPv6Packet } from "./ipv6Packet";
 import { vlanPacket } from "./vlanPacket";
+import { pppoedPacket, pppoePacket } from "./pppoePacket";
 
 export class EthernetPacket extends GenericPacket {
 	innerPacket: GenericPacket;
@@ -26,6 +27,12 @@ export class EthernetPacket extends GenericPacket {
 				break;
 			case 0x86dd:
 				return new IPv6Packet(payload);
+				break;
+			case 0x8863:
+				return new pppoedPacket(payload);
+				break;
+			case 0x8864:
+				return new pppoePacket(payload);
 				break;
 			default:
 				return new GenericPacket(payload);
@@ -66,7 +73,7 @@ export class EthernetPacket extends GenericPacket {
 
 	get toString() {
 		// 00:11:22:33:44:55 > 00:11:22:33:44:55 (0x800)
-		return `${this.srcMAC} > ${this.dstMAC} (0x${this.proto.toString(16).padStart(4, "0")}) ${this.innerPacket.toString}`;
+		return `${this.srcMAC} > ${this.dstMAC} (0x${this.proto.toString(16).padStart(4, "0")}): ${this.innerPacket.toString}`;
 	}
 
 	get getProperties(): Array<any> {
@@ -93,6 +100,12 @@ export class EthernetPacket extends GenericPacket {
 				break;
 			case 0x86dd:
 				arr.push(`Type: IPv6 (0x${this.proto.toString(16)})`);
+				break;
+			case 0x8863:
+				arr.push(`Type: PPPoE Discovery (0x${this.proto.toString(16)})`);
+				break;
+			case 0x8864:
+				arr.push(`Type: PPPoE (0x${this.proto.toString(16)})`);
 				break;
 			default:
 				arr.push(`Type: Unknown (0x${this.proto.toString(16)})`);

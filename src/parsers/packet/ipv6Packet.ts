@@ -112,9 +112,9 @@ export class IPv6Packet extends GenericPacket {
 			default:
 				arr.push(`Next Header: Unknown (${this.nextHeader})`);
 		}
-		arr.push(`Hop Limit: (${this.hopLimit})`);
-		arr.push(`Source Address: (${this.srcAddress.correctForm()})`);
-		arr.push(`Destination Address: (${this.destAddress.correctForm()})`);
+		arr.push(`Hop Limit: ${this.hopLimit}`);
+		arr.push(`Source Address: ${this.srcAddress.correctForm()}`);
+		arr.push(`Destination Address: ${this.destAddress.correctForm()}`);
 
 		return [arr, this.innerPacket.getProperties];
 	}

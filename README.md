@@ -46,6 +46,29 @@ None!
 
 ## Release Notes
 
+### 1.2.0
+
+* Updated icon
+
+* Expanded on DNS implementation with more record types
+
+* Optimized binary output for large files
+
+* Added new protocol parsers:
+    * PPPOE (discovery only)
+    * IGMP versions 1-3
+    * VXLAN
+
+* Fixed bugs:
+    * Exception handling on a per-line basis
+    * Incorrect options offset for ICMPv6
+    * Excess data in known protocols for IPv4 
+    * Excess parenthesis in IPv6 output
+
+
+
+
+
 ### 1.1.0
 
 * Implemented SLL2, 802.1Q VLAN, HTTP, PCAPNG Simple Packet Block

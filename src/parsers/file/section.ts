@@ -227,12 +227,21 @@ export class Section {
 	endoffset: number = 0;
 
 	static processPayload(linktype: number, payload: DataView): GenericPacket {
-		if (linktype === 1) {  //Ethernet II
-			return new EthernetPacket(payload);
-		} else if (linktype === 276) { // Linux SLL2
-			return new SLL2Packet(payload);
-		} 
-		return new GenericPacket(payload);
+			try {
+				if (linktype === 1) {  //Ethernet II
+					return new EthernetPacket(payload);
+				} else if (linktype === 276) { // Linux SLL2
+					return new SLL2Packet(payload);
+				} 
+			} catch (e) {
+				if (e instanceof Error) {
+					console.log(`Exception parsing payload, call stack: ${e.stack}`);
+				} else {
+					console.log(`Exception parsing payload.`);
+				}			
+			}  // In case of exception in parsing, treat as a generic packet.
+
+			return new GenericPacket(payload);
 	}
 
 	constructor(
@@ -492,7 +501,8 @@ export class PCAPNGSection extends Section {
 
 	get options() {
 		const options: PCAPNGOption[] = [];
-		if(this.optionStartOffset >= this.blockLength-4) {
+
+		if(this.optionStartOffset === -1 || this.optionStartOffset >= this.blockLength-4) {
 			return options;
 		}
 
@@ -608,6 +618,7 @@ export class PCAPNGGenericBlock extends PCAPNGSection {
 		
 	}
 
+	get optionStartOffset():number { return -1; };
 
 	get toString() {
 		return `Block Type ${this.blockType} (${this.blockLength} bytes): ${this.data.toString}`;
@@ -746,7 +757,7 @@ export class PCAPNGSimplePacketBlock extends PCAPNGSection {
 	}
 
 	get optionStartOffset():number {
-		return 0;
+		return -1;
 	}
 	
 	get options() {

@@ -51,7 +51,11 @@ class pcapViewerDocument extends Disposable implements vscode.CustomDocument {
 				packet = Section.createNext(bytes, packet, header);
 				this._sections.push(packet);
 			} catch(e) {
-				console.log("exception stack:");
+				if (e instanceof Error) {
+					console.log(`Exception rendering, call stack: ${e.stack}`);
+				} else {
+					console.log(`Exception rendering`);
+				}
 				break;
 			}
 			offset = packet.endoffset;
@@ -239,7 +243,7 @@ export class pcapViewerProvider implements vscode.CustomReadonlyEditorProvider<p
 		webviewPanel.webview.options = {
 			enableScripts: true,
 		};
-		
+
 		webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview, document);
 
 		webviewPanel.webview.onDidReceiveMessage(data => {
@@ -301,30 +305,41 @@ export class pcapViewerProvider implements vscode.CustomReadonlyEditorProvider<p
 		let lineNumberOutput: string = "";
 		let lines: number = 0;
 
-		document.sections.forEach((section) => {
-			let _class = "";
 
-			if (section.comments.length) {
-				for (const comment of section.comments) {
-					if (comment.length) {
-						lineNumberOutput += `<span></span>`;
-						lineOutput += `<span class="comment" id="${lines}">// ${comment}</span>`;
+		document.sections.forEach((section) => {
+			try {
+				let _class = "";
+
+				if (section.comments.length) {
+					for (const comment of section.comments) {
+						if (comment.length) {
+							lineNumberOutput += `<span></span>`;
+							lineOutput += `<span class="comment" id="${lines}">// ${comment}</span>`;
+						}
 					}
 				}
-			}
 
-			if (
-				section instanceof PCAPNGEnhancedPacketBlock || 
-				section instanceof PCAPPacketRecord ||
-				section instanceof PCAPNGSimplePacketBlock
-			) {
-				_class = ` class="numbered"`;
-			}
+				if (
+					section instanceof PCAPNGEnhancedPacketBlock || 
+					section instanceof PCAPPacketRecord ||
+					section instanceof PCAPNGSimplePacketBlock
+				) {
+					_class = ` class="numbered"`;
+				}
 
-			lineNumberOutput += `<span${_class}></span>`;
-			lineOutput += `<span class="packet" id="${lines}">${section.toString}</span>`;
-			lines++;
+				lineNumberOutput += `<span${_class}></span>`;
+				lineOutput += `<span class="packet" id="${lines}">${section.toString}</span>`;
+				lines++;
+			} catch (e)
+			{
+				if (e instanceof Error) {
+					console.log(`Exception rendering, call stack: ${e.stack}`);
+				} else {
+					console.log(`Exception rendering`);
+				}
+			}
 		});
+
 		const nonce = getNonce();
 		return /* html */`
 			<!DOCTYPE html>
