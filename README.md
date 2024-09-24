@@ -1,6 +1,6 @@
 # VSCode Network Tools
 
-The goal of this extension is to provide a set useful tools for anyone that needs to analyze the network.
+The goal of this extension is to provide a set useful tools for anyone that needs to analyze the network. Tested and optimized for large files.
 
 
 ## Features
@@ -9,9 +9,11 @@ The goal of this extension is to provide a set useful tools for anyone that need
     * Ethernet II
     * SLL2
     * 802.1Q VLAN
+    * PPPoE (Discovery)
     * ARP
     * IPv4
     * IPv6
+    * IGMP
     * TCP
     * UDP
     * DHCP 
@@ -19,6 +21,7 @@ The goal of this extension is to provide a set useful tools for anyone that need
     * ICMPv6
     * DNS & mDNS
     * HTTP
+    * VXLAN
 
 * Ability to search within and copy/paste from ouput.
 
@@ -31,7 +34,7 @@ The goal of this extension is to provide a set useful tools for anyone that need
 
 ## Requirements
 
-This extension does not require any addition software, and works on Windows and Linux.
+This extension does not require any addition software, and works on Windows, Linux, and MacOS.
 
 ## Contributions
 
@@ -55,7 +58,7 @@ None!
 * Optimized binary output for large files
 
 * Added new protocol parsers:
-    * PPPOE (discovery only)
+    * PPPoE (discovery only)
     * IGMP versions 1-3
     * VXLAN
 

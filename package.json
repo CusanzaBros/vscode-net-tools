@@ -2,7 +2,7 @@
   "name": "vscode-net-tools",
   "displayName": "Network Tools",
   "description": "Network tools, including pcap and pcapng file parser and viewer",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "CusanzaBros",
   "repository": "https://github.com/CusanzaBros/vscode-net-tools",
   "license": "MIT",
@@ -14,7 +14,7 @@
     "Other"
   ],
   "activationEvents": [],
-  "keywords": ["pcap", "pcapng", "network", "pktmon", "wireshark"],
+  "keywords": ["pcap", "pcapng", "network", "packet", "wireshark"],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
