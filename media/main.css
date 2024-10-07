@@ -1,9 +1,17 @@
 body {
+  padding: 0 20px;
   background-color: transparent;
+	color: var(--vscode-editor-foreground);
+	font-size: var(--vscode-editor-font-size);
+	font-weight: var(--vscode-editor-font-weight);
+	font-family: var(--vscode-editor-font-family);
 }
 
+
 .packet-details {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-auto-rows: 1fr;
 }
 
 .packet-properties {
@@ -11,44 +19,28 @@ body {
 }
 
 .packet-hex {
-  float: left;
-
-  font-family: "courier new", monospace;
-
+  float: right;
   overflow-wrap: break-word;
-
   margin: 1ch;
-
   max-width: 24ch;
 }
 
 .packet-ascii {
-  float: left;
-
-  font-family: "courier new", monospace;
-
+  float: right;
   overflow-wrap: break-word;
-
   margin: 1ch;
-
   max-width: 8ch;
 }
 
 .tree {
   float: left;
-
-  font-family: "courier new", monospace;
-
   margin: 1ch;
-
   display: block;
 }
 
 .tree li {
   display: block;
-
   position: relative;
-
   padding-left: 2ch;
 }
 
@@ -62,7 +54,6 @@ body {
 
 .tree summary {
   display: block;
-
   cursor: pointer;
 }
 

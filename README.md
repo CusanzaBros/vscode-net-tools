@@ -49,6 +49,10 @@ None!
 
 ## Release Notes
 
+### 1.2.1
+
+* Improved rendering speed, time to display is now approximately 10 seconds per 100000 packets
+
 ### 1.2.0
 
 * Updated icon

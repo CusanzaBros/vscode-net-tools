@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { readFileSync } from 'fs';
 import { Disposable, disposeAll } from './dispose';
 import { PCAPNGEnhancedPacketBlock, PCAPNGSimplePacketBlock, PCAPPacketRecord, Section } from "./parsers/file/section";
 import { PacketViewProvider } from './packetdetails';
@@ -184,9 +185,6 @@ export class pcapViewerProvider implements vscode.CustomReadonlyEditorProvider<p
 			pcapViewerProvider.viewType,
 			new pcapViewerProvider(context, details),
 			{
-				// For this demo extension, we enable `retainContextWhenHidden` which keeps the
-				// webview alive even when it is not visible. You should avoid using this setting
-				// unless is absolutely required as it does have memory overhead.
 				webviewOptions: {
 					retainContextWhenHidden: true,
 					enableFindWidget: true
@@ -298,8 +296,7 @@ export class pcapViewerProvider implements vscode.CustomReadonlyEditorProvider<p
 	private getHtmlForWebview(webview: vscode.Webview, document: pcapViewerDocument): string {
 		// Local path to script and css for the webview
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'main.js'));
-		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(
-			this._context.extensionUri, 'media', 'vscode.css'));
+		const css = readFileSync(vscode.Uri.joinPath(this._context.extensionUri, 'media', 'vscode.css').with({scheme: 'vscode-resource'}).fsPath, "utf-8");
 
 		let lineOutput: string = "";
 		let lineNumberOutput: string = "";
@@ -314,7 +311,7 @@ export class pcapViewerProvider implements vscode.CustomReadonlyEditorProvider<p
 					for (const comment of section.comments) {
 						if (comment.length) {
 							lineNumberOutput += `<span></span>`;
-							lineOutput += `<span class="comment" id="${lines}">// ${comment}</span>`;
+							lineOutput += `<div class="comment" id="${lines}">// ${comment}</div>`;
 						}
 					}
 				}
@@ -328,7 +325,7 @@ export class pcapViewerProvider implements vscode.CustomReadonlyEditorProvider<p
 				}
 
 				lineNumberOutput += `<span${_class}></span>`;
-				lineOutput += `<span class="packet" id="${lines}">${section.toString}</span>`;
+				lineOutput += `<div${_class} id="${lines}">${section.toString}</div>`;
 				lines++;
 			} catch (e)
 			{
@@ -343,7 +340,7 @@ export class pcapViewerProvider implements vscode.CustomReadonlyEditorProvider<p
 		const nonce = getNonce();
 		return /* html */`
 			<!DOCTYPE html>
-			<html lang="en">
+			<html lang="en" >
 			<head>
 				<meta charset="UTF-8">
 
@@ -351,57 +348,31 @@ export class pcapViewerProvider implements vscode.CustomReadonlyEditorProvider<p
 				Use a content security policy to only allow loading images from https or from our extension directory,
 				and only allow scripts that have a specific nonce.
 				-->
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} blob:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
-
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} blob:; style-src ${webview.cspSource} 'nonce-${nonce}'; ; script-src 'nonce-${nonce}';">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-
-				<link href="${styleVSCodeUri}" rel="stylesheet" />
-
-
 				<title>Packet Viewer</title>
+				<style nonce="${nonce}">
+				:root {
+					--nettools-before: "${"\\00a0".repeat(document.sections.length.toString().length)}";
+				}
+				@counter-style pad-counter {
+					system: numeric;
+					symbols: "0" "1" "2" "3" "4" "5" "6" "7" "8" "9";
+					pad: ${document.sections.length.toString().length} "\\00a0";
+				} 
+				${css}
+				</style>
 			</head>
 			<body>
-				<div class="editor">
-					<div class="line-numbers" style="width:${document.sections.length.toString().length-1}em;">
-						${lineNumberOutput}
-					</div>
-					<div class="text-output">
-						${lineOutput}
-					</div>
+				<div class="text-container">
+				${lineOutput}
 				</div>
 				<script nonce="${nonce}" src="${scriptUri}"></script>
 			</body>
 			</html>`;
 	}
 
-	
-	
-	private _requestId = 1;
-	private readonly _callbacks = new Map<number, (response: any) => void>();
 
-	private postMessageWithResponse<R = unknown>(panel: vscode.WebviewPanel, type: string, body: any): Promise<R> {
-		const requestId = this._requestId++;
-		const p = new Promise<R>(resolve => this._callbacks.set(requestId, resolve));
-		panel.webview.postMessage({ type, requestId, body });
-		return p;
-	}
-
-	private postMessage(panel: vscode.WebviewPanel, type: string, body: any): void {
-		panel.webview.postMessage({ type, body });
-	}
-
-	private onMessage(document: pcapViewerDocument, message: any) {
-		switch (message.type) {
-
-			case 'response':
-				{
-					const callback = this._callbacks.get(message.requestId);
-					callback?.(message.body);
-					return;
-				}
-		}
-	}
 }
 
 function getNonce() {
