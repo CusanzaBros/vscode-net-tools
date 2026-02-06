@@ -4,6 +4,11 @@ All notable changes to the "vscode-net-tools" extension will be documented in th
 
 ## 1.x Initial Release
 
+### 1.6.0
+
+* Added new protocol parser
+    * Generic Network Virtualization Encapsulation (Geneve)
+
 ### 1.5.1
 
 * Improved TLS parser slightly
