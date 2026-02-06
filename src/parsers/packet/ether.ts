@@ -5,6 +5,7 @@ import { IPv4Packet } from "./ipv4Packet";
 import { IPv6Packet } from "./ipv6Packet";
 import { vlanPacket } from "./vlanPacket";
 import { pppoedPacket, pppoePacket, pppPacket, pppLinkControlPacket, pppIPControlPacket, pppIPv6ControlPacket } from "./pppoePacket";
+import { mplsPacket } from "./mplsPacket";
 import { Node } from "../../packetdetailstree";
 import * as vscode from 'vscode';
 
@@ -20,6 +21,7 @@ export class EthernetPacket extends GenericPacket {
 			case 0x880b: return `PPP`;
 			case 0x8863: return `PPPoE Discovery`;
 			case 0x8864: return `PPPoE`;
+			case 0x8847: return `MPLS Unicast`;
 			default: return `Unknown`;
 		}
 	}
@@ -54,6 +56,8 @@ export class EthernetPacket extends GenericPacket {
 				return new pppoedPacket(payload, fc);
 			case 0x8864:
 				return new pppoePacket(payload, fc);
+			case 0x8847:
+				return new mplsPacket(payload, fc);
 			default:
 				const generic =  new GenericPacket(payload, fc);
 				generic.registerProtocol(`Ethertype #${proto} (0x${proto.toString(16).padStart(4, "0")})`, fc);

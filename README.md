@@ -15,6 +15,7 @@ The goal of this extension is to provide a set useful tools for anyone that need
     * IPv4
     * IPv6
     * GRE
+    * MPLS
     * IP-in-IP
     * IGMP
     * TCP
@@ -57,10 +58,15 @@ Contributions are also welcome!
 
 ## Release Notes
 
-### 1.6.0
+### 1.7.0
 
 * Added new protocol parser
     * Generic Network Virtualization Encapsulation (Geneve)
+
+### 1.6.0
+
+* Added new protocol Parser
+    * MPLS
 
 ### 1.5.1
 
