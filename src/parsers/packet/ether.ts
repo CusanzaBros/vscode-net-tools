@@ -44,6 +44,8 @@ export class EthernetPacket extends GenericPacket {
 				}
 			case 0x806:
 				return new ARPPacket(payload, fc);
+			case 0x6558:
+				return new EthernetPacket(payload, fc);
 			case 0x8100:
 				return new vlanPacket(payload, fc);
 			case 0x86dd:

@@ -6,6 +6,7 @@ import { DNSPacket } from "./dnsPacket";
 import { DHCPPacket } from "./dhcpPacket";
 import { vxlanPacket } from "./vxlanPacket";
 import { QUICPacket} from "./quicPacket";
+import { genevePacket } from "./genevePacket";
 
 export class UDPPacket extends GenericPacket {
 	public static readonly Name = "UDP";
@@ -49,6 +50,11 @@ export class UDPPacket extends GenericPacket {
 
 		if(this.destPort === 4789) {
 			this.innerPacket = new vxlanPacket(dv, fc);
+			return;
+		}
+
+		if(this.destPort === 6081) {
+			this.innerPacket = new genevePacket(dv, fc);
 			return;
 		}
 

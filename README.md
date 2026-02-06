@@ -26,6 +26,7 @@ The goal of this extension is to provide a set useful tools for anyone that need
     * DNS & mDNS
     * HTTP
     * VXLAN
+    * Geneve
     * TLS (Header type only)
     * QUIC (Header type only)
 
@@ -56,6 +57,11 @@ Contributions are also welcome!
 * Selected packets are cleared when items in context menu are used.  To restore: clear selection in packet locator, then reselect desired item in the packet locator. 
 
 ## Release Notes
+
+### 1.7.0
+
+* Added new protocol parser
+    * Generic Network Virtualization Encapsulation (Geneve)
 
 ### 1.6.0
 
